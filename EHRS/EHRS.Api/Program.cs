@@ -1,3 +1,9 @@
+﻿using EHRS.Core.Interfaces;
+using EHRS.Core.Abstractions.Queries;          // ✅ اتضاف
+using EHRS.Infrastructure.Persistence;
+using EHRS.Infrastructure.Services;
+using EHRS.Infrastructure.Queries;             // ✅ اتضاف
+using Microsoft.EntityFrameworkCore;
 
 namespace EHRS.Api
 {
@@ -8,11 +14,20 @@ namespace EHRS.Api
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+            // DbContext (Database First)
+            builder.Services.AddDbContext<EHRSContext>(options =>
+                options.UseSqlServer(
+                    builder.Configuration.GetConnectionString("EHRS")));
+
+            // Services (existing)
+            builder.Services.AddScoped<IDoctorService, DoctorService>();
+
+            // 🔥 NEW: Appointments Queries (GET /appointments)
+            builder.Services.AddScoped<IAppointmentQueries, AppointmentQueries>();
 
             var app = builder.Build();
 
@@ -26,7 +41,6 @@ namespace EHRS.Api
             app.UseHttpsRedirection();
 
             app.UseAuthorization();
-
 
             app.MapControllers();
 
