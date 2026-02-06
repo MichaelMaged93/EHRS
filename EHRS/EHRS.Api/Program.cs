@@ -1,8 +1,8 @@
 ﻿using EHRS.Core.Interfaces;
-using EHRS.Core.Abstractions.Queries;          // ✅ اتضاف
+using EHRS.Core.Abstractions.Queries;
 using EHRS.Infrastructure.Persistence;
 using EHRS.Infrastructure.Services;
-using EHRS.Infrastructure.Queries;             // ✅ اتضاف
+using EHRS.Infrastructure.Queries;
 using Microsoft.EntityFrameworkCore;
 
 namespace EHRS.Api
@@ -13,25 +13,27 @@ namespace EHRS.Api
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            // DbContext (Database First)
             builder.Services.AddDbContext<EHRSContext>(options =>
                 options.UseSqlServer(
                     builder.Configuration.GetConnectionString("EHRS")));
 
-            // Services (existing)
+            // Services
             builder.Services.AddScoped<IDoctorService, DoctorService>();
 
-            // 🔥 NEW: Appointments Queries (GET /appointments)
+            // Queries
             builder.Services.AddScoped<IAppointmentQueries, AppointmentQueries>();
+            builder.Services.AddScoped<IDashboardQueries, DashboardQueries>();
+            builder.Services.AddScoped<IMedicalRecordQueries, MedicalRecordQueries>();
+
+            // Medical Records Service
+            builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -40,10 +42,11 @@ namespace EHRS.Api
 
             app.UseHttpsRedirection();
 
+            // ✅ مهم لعرض الصور
+            app.UseStaticFiles();
+
             app.UseAuthorization();
-
             app.MapControllers();
-
             app.Run();
         }
     }

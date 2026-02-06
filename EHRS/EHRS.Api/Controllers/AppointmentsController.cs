@@ -24,7 +24,7 @@ public sealed class AppointmentsController : ControllerBase
     {
         // مؤقتًا نحط DoctorId ثابت للتست
         // بعدين هيتجاب من التوكن
-        int doctorId = 2;
+        int doctorId = 5;
 
         var result = await _queries.GetDoctorAppointmentsAsync(doctorId, query, ct);
         return Ok(result);
