@@ -43,7 +43,7 @@ public class DoctorService : IDoctorService
             Specialization = request.Specialization,
             Salary = request.Salary,
             ProfilePicture = request.ProfilePicture,
-            Certificates = request.Certificates,
+            Certificates = request.Certificates, // ✅ Path string
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = null
         };
@@ -66,8 +66,11 @@ public class DoctorService : IDoctorService
         entity.ContactNumber = request.ContactNumber;
         entity.Specialization = request.Specialization;
         entity.Salary = request.Salary;
+
+        // ✅ دول Paths (مش ملفات)
         entity.ProfilePicture = request.ProfilePicture;
         entity.Certificates = request.Certificates;
+
         entity.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
@@ -95,8 +98,12 @@ public class DoctorService : IDoctorService
         Specialization = d.Specialization,
         Salary = d.Salary,
         ProfilePicture = d.ProfilePicture,
+
+        // ✅ الجديد: رجّع path للفرونت
+        Certificates = d.Certificates,
+
         CreatedAt = d.CreatedAt,
         UpdatedAt = d.UpdatedAt,
-        HasCertificates = d.Certificates is { Length: > 0 }
+        HasCertificates = !string.IsNullOrWhiteSpace(d.Certificates)
     };
 }

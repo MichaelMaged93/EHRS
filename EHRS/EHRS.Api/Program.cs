@@ -23,14 +23,16 @@ namespace EHRS.Api
 
             // Services
             builder.Services.AddScoped<IDoctorService, DoctorService>();
+            builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
+
+            // ✅ Doctor Profile Service (NEW)
+            builder.Services.AddScoped<IDoctorProfileService, DoctorProfileService>();
 
             // Queries
             builder.Services.AddScoped<IAppointmentQueries, AppointmentQueries>();
             builder.Services.AddScoped<IDashboardQueries, DashboardQueries>();
             builder.Services.AddScoped<IMedicalRecordQueries, MedicalRecordQueries>();
-
-            // Medical Records Service
-            builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
+            builder.Services.AddScoped<IDoctorProfileQueries, DoctorProfileQueries>();
 
             var app = builder.Build();
 
@@ -42,7 +44,7 @@ namespace EHRS.Api
 
             app.UseHttpsRedirection();
 
-            // ✅ مهم لعرض الصور
+            // ✅ مهم لعرض الصور وملفات PDF اللي هتتخزن في wwwroot/uploads
             app.UseStaticFiles();
 
             app.UseAuthorization();
