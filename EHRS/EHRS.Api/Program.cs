@@ -1,8 +1,9 @@
-﻿using EHRS.Core.Interfaces;
-using EHRS.Core.Abstractions.Queries;
+﻿using EHRS.Core.Abstractions.Queries;
+using EHRS.Core.Interfaces;
 using EHRS.Infrastructure.Persistence;
-using EHRS.Infrastructure.Services;
 using EHRS.Infrastructure.Queries;
+using EHRS.Infrastructure.Queries.Patients;
+using EHRS.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace EHRS.Api
@@ -24,8 +25,6 @@ namespace EHRS.Api
             // Services
             builder.Services.AddScoped<IDoctorService, DoctorService>();
             builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
-
-            // ✅ Doctor Profile Service (NEW)
             builder.Services.AddScoped<IDoctorProfileService, DoctorProfileService>();
 
             // Queries
@@ -33,6 +32,13 @@ namespace EHRS.Api
             builder.Services.AddScoped<IDashboardQueries, DashboardQueries>();
             builder.Services.AddScoped<IMedicalRecordQueries, MedicalRecordQueries>();
             builder.Services.AddScoped<IDoctorProfileQueries, DoctorProfileQueries>();
+            builder.Services.AddScoped<IPatientProfileQueries, PatientProfileQueries>();
+
+            // Patient Dashboard
+            builder.Services.AddScoped<IPatientDashboardQueries, PatientDashboardQueries>();
+
+            // ✅ Patient Appointments
+            builder.Services.AddScoped<IPatientAppointmentsQueries, PatientAppointmentsQueries>();
 
             var app = builder.Build();
 
