@@ -4,8 +4,8 @@ namespace EHRS.Api.Contracts.Doctors;
 
 public sealed class UpdateDoctorProfileForm
 {
-    public string FullName { get; set; } = null!;
-    public string MedicalLicense { get; set; } = null!; // NOT NULL
+    public string? FullName { get; set; }
+    public string? MedicalLicense { get; set; }
 
     public string? Specialization { get; set; }
     public string? Email { get; set; }

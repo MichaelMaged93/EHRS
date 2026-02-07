@@ -13,7 +13,9 @@ public sealed class DoctorProfileController : ControllerBase
     private readonly IDoctorProfileQueries _queries;
     private readonly IDoctorProfileService _service;
 
-    public DoctorProfileController(IDoctorProfileQueries queries, IDoctorProfileService service)
+    public DoctorProfileController(
+        IDoctorProfileQueries queries,
+        IDoctorProfileService service)
     {
         _queries = queries;
         _service = service;
@@ -22,7 +24,7 @@ public sealed class DoctorProfileController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<DoctorProfileDataDto>> Get(CancellationToken ct)
     {
-        int doctorId = 2; // مؤقتًا لحد التوكن
+        int doctorId = 7; // مؤقتًا لحد التوكن
 
         try
         {
@@ -37,13 +39,11 @@ public sealed class DoctorProfileController : ControllerBase
 
     [HttpPut]
     [Consumes("multipart/form-data")]
-    public async Task<IActionResult> Put([FromForm] UpdateDoctorProfileForm form, CancellationToken ct)
+    public async Task<IActionResult> Put(
+        [FromForm] UpdateDoctorProfileForm form,
+        CancellationToken ct)
     {
-        int doctorId = 2; // مؤقتًا لحد التوكن
-
-        // Validate NOT NULL field (زيادة أمان)
-        if (string.IsNullOrWhiteSpace(form.MedicalLicense))
-            return BadRequest("MedicalLicense is required.");
+        int doctorId = 7; // مؤقتًا لحد التوكن
 
         string? profilePicturePath = null;
         string? certificatePdfPath = null;
@@ -53,12 +53,10 @@ public sealed class DoctorProfileController : ControllerBase
             "wwwroot",
             "uploads",
             "doctors",
-            doctorId.ToString()
-        );
+            doctorId.ToString());
 
         Directory.CreateDirectory(uploadsFolder);
 
-        // Profile picture (optional)
         if (form.ProfilePictureFile is not null && form.ProfilePictureFile.Length > 0)
         {
             var ext = Path.GetExtension(form.ProfilePictureFile.FileName);
@@ -71,7 +69,6 @@ public sealed class DoctorProfileController : ControllerBase
             profilePicturePath = $"/uploads/doctors/{doctorId}/{fileName}";
         }
 
-        // Certificate PDF (optional)
         if (form.CertificatePdfFile is not null && form.CertificatePdfFile.Length > 0)
         {
             var ext = Path.GetExtension(form.CertificatePdfFile.FileName);
@@ -88,20 +85,19 @@ public sealed class DoctorProfileController : ControllerBase
         }
 
         var ok = await _service.UpdateProfileAsync(
-            doctorId: doctorId,
-            fullName: form.FullName,
-            medicalLicense: form.MedicalLicense,
-            specialization: form.Specialization,
-            email: form.Email,
-            contactNumber: form.ContactNumber,
-            gender: form.Gender,
-            birthDate: form.BirthDate,
-            affiliatedHospital: form.AffiliatedHospital,
-            about: form.About,
-            profilePicturePath: profilePicturePath,
-            certificatePath: certificatePdfPath,
-            ct: ct
-        );
+            doctorId,
+            form.FullName,
+            form.MedicalLicense,
+            form.Specialization,
+            form.Email,
+            form.ContactNumber,
+            form.Gender,
+            form.BirthDate,
+            form.AffiliatedHospital,
+            form.About,
+            profilePicturePath,
+            certificatePdfPath,
+            ct);
 
         return ok ? NoContent() : NotFound();
     }

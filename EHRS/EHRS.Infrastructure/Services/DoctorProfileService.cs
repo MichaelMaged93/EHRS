@@ -8,12 +8,15 @@ public sealed class DoctorProfileService : IDoctorProfileService
 {
     private readonly EHRSContext _db;
 
-    public DoctorProfileService(EHRSContext db) => _db = db;
+    public DoctorProfileService(EHRSContext db)
+    {
+        _db = db;
+    }
 
     public async Task<bool> UpdateProfileAsync(
         int doctorId,
-        string fullName,
-        string medicalLicense,
+        string? fullName,
+        string? medicalLicense,
         string? specialization,
         string? email,
         string? contactNumber,
@@ -28,17 +31,32 @@ public sealed class DoctorProfileService : IDoctorProfileService
         var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.DoctorId == doctorId, ct);
         if (doctor is null) return false;
 
-        doctor.FullName = fullName;
-        doctor.MedicalLicense = medicalLicense; // NOT NULL
-        doctor.Specialization = specialization;
+        if (!string.IsNullOrWhiteSpace(fullName))
+            doctor.FullName = fullName;
 
-        doctor.Email = email;
-        doctor.ContactNumber = contactNumber;
-        doctor.Gender = gender;
-        doctor.BirthDate = birthDate;
+        if (!string.IsNullOrWhiteSpace(medicalLicense))
+            doctor.MedicalLicense = medicalLicense;
 
-        doctor.AffiliatedHospital = affiliatedHospital;
-        doctor.About = about;
+        if (!string.IsNullOrWhiteSpace(specialization))
+            doctor.Specialization = specialization;
+
+        if (!string.IsNullOrWhiteSpace(email))
+            doctor.Email = email;
+
+        if (!string.IsNullOrWhiteSpace(contactNumber))
+            doctor.ContactNumber = contactNumber;
+
+        if (!string.IsNullOrWhiteSpace(gender))
+            doctor.Gender = gender;
+
+        if (birthDate.HasValue)
+            doctor.BirthDate = birthDate;
+
+        if (!string.IsNullOrWhiteSpace(affiliatedHospital))
+            doctor.AffiliatedHospital = affiliatedHospital;
+
+        if (!string.IsNullOrWhiteSpace(about))
+            doctor.About = about;
 
         if (!string.IsNullOrWhiteSpace(profilePicturePath))
             doctor.ProfilePicture = profilePicturePath;

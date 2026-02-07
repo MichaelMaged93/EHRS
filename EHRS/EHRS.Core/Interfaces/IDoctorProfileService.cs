@@ -4,8 +4,8 @@ public interface IDoctorProfileService
 {
     Task<bool> UpdateProfileAsync(
         int doctorId,
-        string fullName,
-        string medicalLicense,
+        string? fullName,
+        string? medicalLicense,
         string? specialization,
         string? email,
         string? contactNumber,

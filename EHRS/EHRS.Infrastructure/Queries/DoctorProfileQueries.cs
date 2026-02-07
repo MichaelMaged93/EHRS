@@ -9,7 +9,10 @@ public sealed class DoctorProfileQueries : IDoctorProfileQueries
 {
     private readonly EHRSContext _db;
 
-    public DoctorProfileQueries(EHRSContext db) => _db = db;
+    public DoctorProfileQueries(EHRSContext db)
+    {
+        _db = db;
+    }
 
     public async Task<DoctorProfileDataDto> GetDoctorProfileAsync(int doctorId, CancellationToken ct)
     {
