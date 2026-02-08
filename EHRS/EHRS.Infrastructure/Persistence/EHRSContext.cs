@@ -29,8 +29,15 @@ public partial class EHRSContext : DbContext
     public virtual DbSet<SurgeryHistory> SurgeryHistories { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=.;Database=EHR_Wearable_DB;Trusted_Connection=True;TrustServerCertificate=True");
+    {
+        // ✅ Important:
+        // In this project, the connection string should come from DI (Program.cs) + appsettings.json.
+        // This fallback is only used if the context is created without options (e.g., tooling).
+        if (!optionsBuilder.IsConfigured)
+        {
+            optionsBuilder.UseSqlServer("Name=ConnectionStrings:EHRS");
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
