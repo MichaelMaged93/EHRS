@@ -65,12 +65,15 @@ public partial class EHRSContext : DbContext
 
             entity.ToTable("Doctor");
 
+            entity.HasIndex(e => e.Area, "IX_Doctor_Area");
+
             entity.HasIndex(e => e.Email, "UX_Doctor_Email")
                 .IsUnique()
                 .HasFilter("([Email] IS NOT NULL)");
 
             entity.Property(e => e.About).HasMaxLength(1000);
             entity.Property(e => e.AffiliatedHospital).HasMaxLength(200);
+            entity.Property(e => e.Area).HasMaxLength(100);
             entity.Property(e => e.Certificates).HasMaxLength(500);
             entity.Property(e => e.ContactNumber).HasMaxLength(20);
             entity.Property(e => e.CreatedAt)

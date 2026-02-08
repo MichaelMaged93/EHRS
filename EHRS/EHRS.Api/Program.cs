@@ -37,8 +37,11 @@ namespace EHRS.Api
             // Patient Dashboard
             builder.Services.AddScoped<IPatientDashboardQueries, PatientDashboardQueries>();
 
-            // ✅ Patient Appointments
+            // ✅ Patient Appointments (Upcoming + Cancel)
             builder.Services.AddScoped<IPatientAppointmentsQueries, PatientAppointmentsQueries>();
+
+            // ✅ Patient Booking (Areas/Specialties/Doctors + Create)
+            builder.Services.AddScoped<IPatientBookingQueries, PatientBookingQueries>();
 
             var app = builder.Build();
 
@@ -50,7 +53,6 @@ namespace EHRS.Api
 
             app.UseHttpsRedirection();
 
-            // ✅ مهم لعرض الصور وملفات PDF اللي هتتخزن في wwwroot/uploads
             app.UseStaticFiles();
 
             app.UseAuthorization();

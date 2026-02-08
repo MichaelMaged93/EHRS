@@ -35,6 +35,8 @@ public partial class Doctor
 
     public string MedicalLicense { get; set; } = null!;
 
+    public string? Area { get; set; }
+
     public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
 
     public virtual ICollection<MedicalRecord> MedicalRecords { get; set; } = new List<MedicalRecord>();
