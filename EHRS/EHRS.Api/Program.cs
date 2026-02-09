@@ -14,13 +14,18 @@ namespace EHRS.Api
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // Controllers & Swagger
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+            // DbContext
+            var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
+            if (string.IsNullOrWhiteSpace(connStr))
+                throw new InvalidOperationException("Connection string 'DefaultConnection' is missing.");
+
             builder.Services.AddDbContext<EHRSContext>(options =>
-                options.UseSqlServer(
-                    builder.Configuration.GetConnectionString("EHRS")));
+                options.UseSqlServer(connStr));
 
             // Services
             builder.Services.AddScoped<IDoctorService, DoctorService>();
@@ -34,13 +39,16 @@ namespace EHRS.Api
             builder.Services.AddScoped<IDoctorProfileQueries, DoctorProfileQueries>();
             builder.Services.AddScoped<IPatientProfileQueries, PatientProfileQueries>();
 
+            // ✅ Patient Medical History (Diseases/Allergies/Surgeries)
+            builder.Services.AddScoped<IPatientMedicalHistoryQueries, PatientMedicalHistoryQueries>();
+
             // Patient Dashboard
             builder.Services.AddScoped<IPatientDashboardQueries, PatientDashboardQueries>();
 
-            // ✅ Patient Appointments (Upcoming + Cancel)
+            // Patient Appointments
             builder.Services.AddScoped<IPatientAppointmentsQueries, PatientAppointmentsQueries>();
 
-            // ✅ Patient Booking (Areas/Specialties/Doctors + Create)
+            // Patient Booking
             builder.Services.AddScoped<IPatientBookingQueries, PatientBookingQueries>();
 
             var app = builder.Build();
@@ -52,10 +60,10 @@ namespace EHRS.Api
             }
 
             app.UseHttpsRedirection();
-
             app.UseStaticFiles();
 
             app.UseAuthorization();
+
             app.MapControllers();
             app.Run();
         }
