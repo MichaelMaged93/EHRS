@@ -55,7 +55,7 @@ namespace EHRS.Api.Controllers
             return Ok(record);
         }
 
-        // ✅ POST /api/MedicalRecords  (Form-Data: بيانات + File اختياري)
+        // ✅ POST /api/MedicalRecords  (Form-Data: بيانات + Files اختيارية)
         [HttpPost]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<MedicalRecordDetailsDto>> Create(
@@ -74,54 +74,46 @@ namespace EHRS.Api.Controllers
                 Diagnosis = form.Diagnosis,
                 ClinicalNotes = form.ClinicalNotes,
                 Treatment = form.Treatment,
-                Radiology = form.Radiology,
+
+                // ✅ ممنوع إدخال radiology يدوي -> يبدأ null ويتحدد من upload
+                Radiology = null,
                 PrescriptionImagePath = null
             };
 
             var created = await _service.CreateAsync(doctorId, request, ct);
 
-            // 2) Upload prescription (اختياري)
-            if (form.File is not null && form.File.Length > 0)
+            // 2) Upload Prescription (اختياري)
+            if (form.PrescriptionFile is not null && form.PrescriptionFile.Length > 0)
             {
-                await using var stream = form.File.OpenReadStream();
+                await using var stream = form.PrescriptionFile.OpenReadStream();
 
                 await _service.UploadPrescriptionAsync(
                     created.RecordId,
                     stream,
-                    form.File.FileName,
+                    form.PrescriptionFile.FileName,
                     _env.WebRootPath,
                     ct);
             }
 
-            // 3) رجّع record النهائي (بعد الرفع لو حصل)
+            // 3) Upload Radiology (اختياري)
+            if (form.RadiologyFile is not null && form.RadiologyFile.Length > 0)
+            {
+                await using var stream = form.RadiologyFile.OpenReadStream();
+
+                await _service.UploadRadiologyAsync(
+                    created.RecordId,
+                    stream,
+                    form.RadiologyFile.FileName,
+                    _env.WebRootPath,
+                    ct);
+            }
+
+            // 4) رجّع record النهائي
             var finalRecord = await _queries.GetByIdAsync(created.RecordId, ct);
             if (finalRecord is null)
                 return CreatedAtAction(nameof(GetById), new { id = created.RecordId }, created);
 
             return CreatedAtAction(nameof(GetById), new { id = finalRecord.RecordId }, finalRecord);
         }
-
-        // (اختياري) Endpoint رفع منفصل - خليه موجود احتياطي
-        // POST /api/MedicalRecords/{recordId}/prescription
-        //[HttpPost("{recordId:int}/prescription")]
-        //[Consumes("multipart/form-data")]
-        //public async Task<IActionResult> UploadPrescription(
-        //    int recordId,
-        //    IFormFile file,
-        //    CancellationToken ct)
-        //{
-        //    if (file == null || file.Length == 0)
-        //        return BadRequest("File is required.");
-
-        //    await using var stream = file.OpenReadStream();
-        //    await _service.UploadPrescriptionAsync(
-        //        recordId,
-        //        stream,
-        //        file.FileName,
-        //        _env.WebRootPath,
-        //        ct);
-
-        //    return NoContent();
-        //}
     }
 }

@@ -37,11 +37,10 @@ namespace EHRS.Infrastructure.Services
                 throw new InvalidOperationException("PatientId does not match the appointment.");
 
             bool exists = await _db.MedicalRecords
-                .AsNoTracking()
                 .AnyAsync(r => r.AppointmentId == request.AppointmentId, ct);
 
             if (exists)
-                throw new InvalidOperationException("A medical record already exists for this appointment.");
+                throw new InvalidOperationException("Medical record already exists.");
 
             var entity = new MedicalRecord
             {
@@ -53,14 +52,13 @@ namespace EHRS.Infrastructure.Services
                 Diagnosis = request.Diagnosis,
                 ClinicalNotes = request.ClinicalNotes,
                 Treatment = request.Treatment,
-                Radiology = request.Radiology,
-                PrescriptionImagePath = request.PrescriptionImagePath
+                Radiology = request.Radiology
             };
 
             _db.MedicalRecords.Add(entity);
             await _db.SaveChangesAsync(ct);
 
-            var dto = await _db.MedicalRecords
+            return await _db.MedicalRecords
                 .AsNoTracking()
                 .Where(r => r.RecordId == entity.RecordId)
                 .Select(r => new MedicalRecordDetailsDto
@@ -79,8 +77,6 @@ namespace EHRS.Infrastructure.Services
                     PrescriptionImagePath = r.PrescriptionImagePath
                 })
                 .FirstAsync(ct);
-
-            return dto;
         }
 
         public async Task UploadPrescriptionAsync(
@@ -90,32 +86,50 @@ namespace EHRS.Infrastructure.Services
             string webRootPath,
             CancellationToken ct)
         {
-            var record = await _db.MedicalRecords.FindAsync(new object[] { recordId }, ct);
-            if (record is null)
-                throw new InvalidOperationException("Medical record not found.");
+            var record = await _db.MedicalRecords.FindAsync(new object[] { recordId }, ct)
+                ?? throw new InvalidOperationException("Medical record not found.");
 
-            // ✅ Fallback لو WebRootPath فاضي/Null (بيسبب 500)
             if (string.IsNullOrWhiteSpace(webRootPath))
-            {
                 webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-            }
 
-            var uploadsDir = Path.Combine(webRootPath, "uploads", "prescriptions");
-            Directory.CreateDirectory(uploadsDir);
+            var dir = Path.Combine(webRootPath, "uploads", "prescriptions");
+            Directory.CreateDirectory(dir);
 
             var ext = Path.GetExtension(fileName);
-            if (string.IsNullOrWhiteSpace(ext))
-                ext = ".jpg";
+            var safeName = $"record-{recordId}{ext}";
+            var path = Path.Combine(dir, safeName);
 
-            var safeFileName = $"record-{recordId}{ext}";
-            var fullPath = Path.Combine(uploadsDir, safeFileName);
+            using var outStream = new FileStream(path, FileMode.Create);
+            await fileStream.CopyToAsync(outStream, ct);
 
-            using (var outStream = new FileStream(fullPath, FileMode.Create, FileAccess.Write))
-            {
-                await fileStream.CopyToAsync(outStream, ct);
-            }
+            record.PrescriptionImagePath = $"/uploads/prescriptions/{safeName}";
+            await _db.SaveChangesAsync(ct);
+        }
 
-            record.PrescriptionImagePath = $"/uploads/prescriptions/{safeFileName}";
+        public async Task UploadRadiologyAsync(
+            int recordId,
+            Stream fileStream,
+            string fileName,
+            string webRootPath,
+            CancellationToken ct)
+        {
+            var record = await _db.MedicalRecords.FindAsync(new object[] { recordId }, ct)
+                ?? throw new InvalidOperationException("Medical record not found.");
+
+            if (string.IsNullOrWhiteSpace(webRootPath))
+                webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+
+            var dir = Path.Combine(webRootPath, "uploads", "radiology");
+            Directory.CreateDirectory(dir);
+
+            var ext = Path.GetExtension(fileName);
+            var safeName = $"record-{recordId}-rad{ext}";
+            var path = Path.Combine(dir, safeName);
+
+            using var outStream = new FileStream(path, FileMode.Create);
+            await fileStream.CopyToAsync(outStream, ct);
+
+            record.Radiology = $"/uploads/radiology/{safeName}";
             await _db.SaveChangesAsync(ct);
         }
     }

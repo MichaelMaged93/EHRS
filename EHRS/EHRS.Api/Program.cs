@@ -38,8 +38,9 @@ namespace EHRS.Api
             builder.Services.AddScoped<IMedicalRecordQueries, MedicalRecordQueries>();
             builder.Services.AddScoped<IDoctorProfileQueries, DoctorProfileQueries>();
             builder.Services.AddScoped<IPatientProfileQueries, PatientProfileQueries>();
+            builder.Services.AddScoped<IPatientPrescriptionsQueries, PatientPrescriptionsQueries>();
 
-            // ✅ Patient Medical History (Diseases/Allergies/Surgeries)
+            // Patient Medical History (Diseases / Allergies)
             builder.Services.AddScoped<IPatientMedicalHistoryQueries, PatientMedicalHistoryQueries>();
 
             // Patient Dashboard
@@ -50,6 +51,9 @@ namespace EHRS.Api
 
             // Patient Booking
             builder.Services.AddScoped<IPatientBookingQueries, PatientBookingQueries>();
+
+            // ✅ Patient Imaging & Radiology
+            builder.Services.AddScoped<IPatientImagingQueries, PatientImagingQueries>();
 
             var app = builder.Build();
 
