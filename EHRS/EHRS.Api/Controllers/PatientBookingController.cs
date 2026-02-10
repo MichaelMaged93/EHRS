@@ -1,10 +1,13 @@
-﻿using EHRS.Core.Abstractions.Queries;
+﻿using EHRS.Api.Helpers;
+using EHRS.Core.Abstractions.Queries;
 using EHRS.Core.DTOs.Patients;
 using EHRS.Core.Requests.Patients;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EHRS.Api.Controllers;
 
+[Authorize(Roles = "Patient")]
 [ApiController]
 [Route("api/[controller]")]
 public sealed class PatientBookingController : ControllerBase
@@ -15,9 +18,6 @@ public sealed class PatientBookingController : ControllerBase
     {
         _queries = queries;
     }
-
-    // مؤقت لحد JWT
-    private const int PatientId = 8;
 
     // GET: /api/PatientBooking/areas
     [HttpGet("areas")]
@@ -63,9 +63,11 @@ public sealed class PatientBookingController : ControllerBase
         [FromBody] CreatePatientBookingRequest request,
         CancellationToken ct)
     {
+        var patientId = ClaimsHelper.GetPatientId(User);
+
         try
         {
-            var result = await _queries.CreateAsync(PatientId, request, ct);
+            var result = await _queries.CreateAsync(patientId, request, ct);
             return Created(string.Empty, result);
         }
         catch (ArgumentException ex)

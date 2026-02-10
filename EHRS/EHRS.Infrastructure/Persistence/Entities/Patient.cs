@@ -40,4 +40,6 @@ public partial class Patient
     public virtual ICollection<SensorDatum> SensorData { get; set; } = new List<SensorDatum>();
 
     public virtual ICollection<SurgeryHistory> SurgeryHistories { get; set; } = new List<SurgeryHistory>();
+
+    public virtual UserCredential? UserCredential { get; set; }
 }

@@ -1,9 +1,11 @@
 ﻿using EHRS.Core.DTOs.Doctors;
 using EHRS.Core.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EHRS.Api.Controllers;
 
+[Authorize(Roles = "Admin")]
 [ApiController]
 [Route("api/[controller]")]
 public class DoctorsController : ControllerBase

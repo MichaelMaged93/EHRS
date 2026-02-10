@@ -1,11 +1,14 @@
 ﻿using EHRS.Api.Contracts.Doctors;
+using EHRS.Api.Helpers;
 using EHRS.Core.Abstractions.Queries;
 using EHRS.Core.Dtos.Doctors;
 using EHRS.Core.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EHRS.Api.Controllers;
 
+[Authorize(Roles = "Doctor")]
 [ApiController]
 [Route("api/[controller]")]
 public sealed class DoctorProfileController : ControllerBase
@@ -24,7 +27,7 @@ public sealed class DoctorProfileController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<DoctorProfileDataDto>> Get(CancellationToken ct)
     {
-        int doctorId = 7; // مؤقتًا لحد التوكن
+        var doctorId = ClaimsHelper.GetDoctorId(User);
 
         try
         {
@@ -43,7 +46,7 @@ public sealed class DoctorProfileController : ControllerBase
         [FromForm] UpdateDoctorProfileForm form,
         CancellationToken ct)
     {
-        int doctorId = 7; // مؤقتًا لحد التوكن
+        var doctorId = ClaimsHelper.GetDoctorId(User);
 
         string? profilePicturePath = null;
         string? certificatePdfPath = null;

@@ -28,16 +28,11 @@ public partial class EHRSContext : DbContext
 
     public virtual DbSet<SurgeryHistory> SurgeryHistories { get; set; }
 
+    public virtual DbSet<UserCredential> UserCredentials { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        // ✅ Important:
-        // In this project, the connection string should come from DI (Program.cs) + appsettings.json.
-        // This fallback is only used if the context is created without options (e.g., tooling).
-        if (!optionsBuilder.IsConfigured)
-        {
-            optionsBuilder.UseSqlServer("Name=ConnectionStrings:EHRS");
-        }
-    }
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=.;Database=EHR_Wearable_DB;Trusted_Connection=True;TrustServerCertificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -189,6 +184,35 @@ public partial class EHRSContext : DbContext
             entity.HasOne(d => d.Patient).WithMany(p => p.SurgeryHistories)
                 .HasForeignKey(d => d.PatientId)
                 .HasConstraintName("FK_SurgeryHistory_Patient");
+        });
+
+        modelBuilder.Entity<UserCredential>(entity =>
+        {
+            entity.HasKey(e => e.CredentialId).HasName("PK__UserCred__2C58F9CC9A9B9E42");
+
+            entity.ToTable("UserCredential");
+
+            entity.HasIndex(e => e.DoctorId, "UX_UserCredential_DoctorId")
+                .IsUnique()
+                .HasFilter("([DoctorId] IS NOT NULL)");
+
+            entity.HasIndex(e => e.PatientId, "UX_UserCredential_PatientId")
+                .IsUnique()
+                .HasFilter("([PatientId] IS NOT NULL)");
+
+            entity.Property(e => e.CreatedAt)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.PasswordHash).HasMaxLength(500);
+            entity.Property(e => e.Role).HasMaxLength(20);
+
+            entity.HasOne(d => d.Doctor).WithOne(p => p.UserCredential)
+                .HasForeignKey<UserCredential>(d => d.DoctorId)
+                .HasConstraintName("FK_UserCredential_Doctor");
+
+            entity.HasOne(d => d.Patient).WithOne(p => p.UserCredential)
+                .HasForeignKey<UserCredential>(d => d.PatientId)
+                .HasConstraintName("FK_UserCredential_Patient");
         });
 
         OnModelCreatingPartial(modelBuilder);

@@ -10,9 +10,16 @@ public sealed class PatientPrescriptionCardDto
 
     public DateTime PrescriptionDate { get; set; }
 
-    // The stored path in DB (useful for debugging / internal use)
+    // 🆕 Medical Record details
+    public string? ChiefComplaint { get; set; }
+
+    public string? Diagnosis { get; set; }
+
+    public string? Treatment { get; set; }
+
+    // Stored path in DB
     public string PrescriptionPath { get; set; } = string.Empty;
 
-    // A relative URL for viewing/downloading the file via API
+    // API endpoint for downloading the prescription
     public string DownloadUrl { get; set; } = string.Empty;
 }

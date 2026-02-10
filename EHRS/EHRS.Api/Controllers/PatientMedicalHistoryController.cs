@@ -1,9 +1,12 @@
-﻿using EHRS.Core.Abstractions.Queries;
+﻿using EHRS.Api.Helpers;
+using EHRS.Core.Abstractions.Queries;
 using EHRS.Core.Requests.Patients;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EHRS.Api.Controllers;
 
+[Authorize(Roles = "Patient")]
 [ApiController]
 [Route("api/[controller]")]
 public sealed class PatientMedicalHistoryController : ControllerBase
@@ -13,14 +16,15 @@ public sealed class PatientMedicalHistoryController : ControllerBase
     public PatientMedicalHistoryController(IPatientMedicalHistoryQueries queries)
         => _queries = queries;
 
-    // مؤقت لحد JWT
-    private const int PatientId = 10;
-
     [HttpGet]
     public async Task<IActionResult> Get()
     {
-        var result = await _queries.GetMedicalHistoryAsync(PatientId);
-        return result is null ? NotFound(new { message = "Patient not found." }) : Ok(result);
+        var patientId = ClaimsHelper.GetPatientId(User);
+
+        var result = await _queries.GetMedicalHistoryAsync(patientId);
+        return result is null
+            ? NotFound(new { message = "Patient not found." })
+            : Ok(result);
     }
 
     [HttpPut]
@@ -29,7 +33,11 @@ public sealed class PatientMedicalHistoryController : ControllerBase
         if (request.ChronicDiseases is null && request.Allergies is null)
             return BadRequest(new { message = "Provide at least chronicDiseases or allergies." });
 
-        var ok = await _queries.UpdateMedicalHistoryAsync(PatientId, request);
-        return ok ? NoContent() : NotFound(new { message = "Patient not found." });
+        var patientId = ClaimsHelper.GetPatientId(User);
+
+        var ok = await _queries.UpdateMedicalHistoryAsync(patientId, request);
+        return ok
+            ? NoContent()
+            : NotFound(new { message = "Patient not found." });
     }
 }

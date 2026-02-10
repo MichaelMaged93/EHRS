@@ -1,11 +1,14 @@
 ﻿using EHRS.Api.Contracts.Patients;
+using EHRS.Api.Helpers;
 using EHRS.Core.Abstractions.Queries;
 using EHRS.Core.DTOs.Patients;
 using EHRS.Core.Requests.Patients;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EHRS.Api.Controllers;
 
+[Authorize(Roles = "Patient")]
 [ApiController]
 [Route("api/[controller]")]
 public sealed class PatientProfileController : ControllerBase
@@ -19,13 +22,12 @@ public sealed class PatientProfileController : ControllerBase
         _env = env;
     }
 
-    // مؤقت لحد JWT
-    private const int PatientId = 10;
-
     [HttpGet]
     public async Task<ActionResult<PatientProfileDto>> Get(CancellationToken ct)
     {
-        var dto = await _queries.GetAsync(PatientId, ct);
+        var patientId = ClaimsHelper.GetPatientId(User);
+
+        var dto = await _queries.GetAsync(patientId, ct);
         if (dto is null) return NotFound("Patient not found.");
 
         return Ok(dto);
@@ -37,6 +39,8 @@ public sealed class PatientProfileController : ControllerBase
         [FromForm] UpdatePatientProfileForm form,
         CancellationToken ct)
     {
+        var patientId = ClaimsHelper.GetPatientId(User);
+
         // نحول الـ Form لـ Core Request (بنفس pattern عندنا)
         var request = new UpdatePatientProfileRequest
         {
@@ -59,10 +63,10 @@ public sealed class PatientProfileController : ControllerBase
 
         if (form.ProfilePicture is not null && form.ProfilePicture.Length > 0)
         {
-            relativePath = await SavePatientProfilePictureAsync(PatientId, form.ProfilePicture, ct);
+            relativePath = await SavePatientProfilePictureAsync(patientId, form.ProfilePicture, ct);
         }
 
-        var dto = await _queries.UpdateAsync(PatientId, request, relativePath, ct);
+        var dto = await _queries.UpdateAsync(patientId, request, relativePath, ct);
         if (dto is null) return NotFound("Patient not found.");
 
         return Ok(dto);

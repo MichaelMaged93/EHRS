@@ -1,20 +1,20 @@
 ﻿using System.IO;
+using EHRS.Api.Helpers;
 using EHRS.Core.Abstractions.Queries;
 using EHRS.Core.DTOs.Prescriptions;
 using EHRS.Core.Requests.Prescriptions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EHRS.Api.Controllers;
 
+[Authorize(Roles = "Patient")]
 [ApiController]
 [Route("api/[controller]")]
 public sealed class PatientPrescriptionsController : ControllerBase
 {
     private readonly IPatientPrescriptionsQueries _queries;
     private readonly IWebHostEnvironment _env;
-
-    // TODO: Replace with patientId extracted from JWT later
-    private const int patientId = 10;
 
     public PatientPrescriptionsController(IPatientPrescriptionsQueries queries, IWebHostEnvironment env)
     {
@@ -27,6 +27,8 @@ public sealed class PatientPrescriptionsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PatientPrescriptionsPagedResultDto>> Get([FromQuery] GetPatientPrescriptionsRequest request)
     {
+        var patientId = ClaimsHelper.GetPatientId(User);
+
         var tab = (request.Tab ?? string.Empty).Trim().ToLowerInvariant();
         if (tab is not ("active" or "past"))
             return BadRequest("Invalid tab. Allowed values: active, past.");
@@ -42,6 +44,8 @@ public sealed class PatientPrescriptionsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Download([FromRoute] int recordId)
     {
+        var patientId = ClaimsHelper.GetPatientId(User);
+
         var fileRef = await _queries.GetPrescriptionFileRefAsync(patientId, recordId);
         if (fileRef is null)
         {

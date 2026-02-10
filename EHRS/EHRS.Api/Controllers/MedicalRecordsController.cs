@@ -1,13 +1,16 @@
 ﻿using EHRS.Api.Contracts.MedicalRecords;
+using EHRS.Api.Helpers;
 using EHRS.Core.Abstractions.Queries;
 using EHRS.Core.Common;
 using EHRS.Core.DTOs.MedicalRecords;
 using EHRS.Core.Interfaces;
 using EHRS.Core.Requests.MedicalRecords;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EHRS.Api.Controllers
 {
+    [Authorize(Roles = "Doctor")]
     [ApiController]
     [Route("api/[controller]")]
     public sealed class MedicalRecordsController : ControllerBase
@@ -32,7 +35,8 @@ namespace EHRS.Api.Controllers
             [FromQuery] MedicalRecordQuery query,
             CancellationToken ct)
         {
-            int doctorId = 2; // مؤقتًا
+            var doctorId = ClaimsHelper.GetDoctorId(User);
+
             var result = await _queries.GetDoctorMedicalRecordsAsync(doctorId, query, ct);
             return Ok(result);
         }
@@ -62,7 +66,7 @@ namespace EHRS.Api.Controllers
             [FromForm] CreateMedicalRecordForm form,
             CancellationToken ct)
         {
-            int doctorId = 2; // مؤقتًا
+            var doctorId = ClaimsHelper.GetDoctorId(User);
 
             // 1) Create Medical Record
             var request = new CreateMedicalRecordRequest

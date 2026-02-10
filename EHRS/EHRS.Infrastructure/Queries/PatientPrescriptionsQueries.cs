@@ -46,7 +46,7 @@ public sealed class PatientPrescriptionsQueries : IPatientPrescriptionsQueries
         }
         else
         {
-            // invalid tab -> return empty list (Controller should return 400 anyway)
+            // invalid tab -> return empty list (Controller already returns 400)
             return new PatientPrescriptionsPagedResultDto
             {
                 PageNumber = pageNumber,
@@ -66,11 +66,17 @@ public sealed class PatientPrescriptionsQueries : IPatientPrescriptionsQueries
             {
                 RecordId = m.RecordId,
 
-                // ✅ Null-safe (prevents server crash if relation is broken)
+                // Doctor info (null-safe)
                 DoctorName = m.Doctor != null ? m.Doctor.FullName : "Unknown Doctor",
                 DoctorSpecialization = m.Doctor != null ? m.Doctor.Specialization : null,
 
                 PrescriptionDate = m.RecordDateTime,
+
+                // ✅ Medical Record details (NEW)
+                ChiefComplaint = m.ChiefComplaint,
+                Diagnosis = m.Diagnosis,
+                Treatment = m.Treatment,
+
                 PrescriptionPath = m.PrescriptionImagePath!,
                 DownloadUrl = $"/api/PatientPrescriptions/{m.RecordId}/download"
             })

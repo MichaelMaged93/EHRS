@@ -1,9 +1,12 @@
-﻿using EHRS.Core.Abstractions.Queries;
+﻿using EHRS.Api.Helpers;
+using EHRS.Core.Abstractions.Queries;
 using EHRS.Core.DTOs.Patients;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EHRS.Api.Controllers;
 
+[Authorize(Roles = "Patient")]
 [ApiController]
 [Route("api/[controller]")]
 public sealed class PatientDashboardController : ControllerBase
@@ -15,13 +18,12 @@ public sealed class PatientDashboardController : ControllerBase
         _queries = queries;
     }
 
-    // مؤقت لحد JWT
-    private const int PatientId = 10;
-
     [HttpGet]
     public async Task<ActionResult<PatientDashboardDto>> Get(CancellationToken ct)
     {
-        var dto = await _queries.GetAsync(PatientId, ct);
+        var patientId = ClaimsHelper.GetPatientId(User);
+
+        var dto = await _queries.GetAsync(patientId, ct);
         if (dto is null) return NotFound("Patient not found.");
 
         return Ok(dto);
