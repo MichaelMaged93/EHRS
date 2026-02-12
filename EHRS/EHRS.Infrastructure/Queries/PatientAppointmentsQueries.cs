@@ -47,7 +47,16 @@ public sealed class PatientAppointmentsQueries : IPatientAppointmentsQueries
                 DoctorName = a.Doctor.FullName,
                 DoctorProfilePicture = a.Doctor.ProfilePicture,
                 ReasonForVisit = a.ReasonForVisit,
-                Status = a.Status
+
+                // ✅ Unified display status:
+                // cancelled if IsCancelled = true
+                // completed if Status = 1 and not cancelled
+                // waiting otherwise (Status = 0 and not cancelled)
+                Status = a.IsCancelled
+                    ? "cancelled"
+                    : a.Status == 1
+                        ? "completed"
+                        : "waiting"
             })
             .ToListAsync(ct);
 

@@ -50,7 +50,6 @@ public sealed class AppointmentQueries : IAppointmentQueries
             {
                 baseQuery = baseQuery.Where(a => a.Status == 1 && !a.IsCancelled);
             }
-            // أي قيمة تانية: نتجاهلها (أو ممكن ترجع BadRequest في Controller لو حابب)
         }
 
         // search: AppointmentId OR Patient FullName
@@ -89,7 +88,7 @@ public sealed class AppointmentQueries : IAppointmentQueries
             AppointmentId = r.AppointmentId,
             PatientName = r.PatientName,
             AppointmentDateTime = r.AppointmentDateTime,
-            Type = r.ReasonForVisit ?? string.Empty,  // UI "Type" = ReasonForVisit
+            Type = r.ReasonForVisit ?? string.Empty,
             Status = MapStatusToText(r.Status, r.IsCancelled)
         }).ToList();
 
@@ -102,7 +101,6 @@ public sealed class AppointmentQueries : IAppointmentQueries
         };
     }
 
-    // ===== Status Mapping =====
     private static string MapStatusToText(byte status, bool isCancelled)
     {
         if (isCancelled) return "cancelled";

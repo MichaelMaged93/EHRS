@@ -40,7 +40,7 @@ public sealed class PatientUpcomingAppointmentDto
     public int DoctorId { get; set; }
     public string DoctorName { get; set; } = string.Empty;
 
-    public byte? Status { get; set; }
+    public string Status { get; set; } = string.Empty;
     public string? ReasonForVisit { get; set; }
 }
 

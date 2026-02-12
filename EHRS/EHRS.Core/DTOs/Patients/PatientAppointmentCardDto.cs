@@ -13,5 +13,5 @@ public sealed class PatientAppointmentCardDto
     public string? ReasonForVisit { get; set; }
 
     // Status في الداتابيز عندك byte
-    public byte Status { get; set; }
+    public string Status { get; set; } = string.Empty;
 }

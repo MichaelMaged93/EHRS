@@ -25,9 +25,11 @@ public sealed class PatientDashboardQueries : IPatientDashboardQueries
             .OrderByDescending(s => s.Timestamp)
             .FirstOrDefaultAsync(ct);
 
-        // Upcoming appointment (nearest) - status is byte in your entity
+        // Upcoming appointment (nearest)
         var now = DateTime.UtcNow;
+
         var upcoming = await _db.Appointments
+            .AsNoTracking()
             .Where(a => a.PatientId == patientId
                         && !a.IsCancelled
                         && a.AppointmentDateTime >= now)
@@ -38,13 +40,17 @@ public sealed class PatientDashboardQueries : IPatientDashboardQueries
                 AppointmentDateTime = a.AppointmentDateTime,
                 DoctorId = a.DoctorId,
                 DoctorName = a.Doctor.FullName,
-                Status = a.Status,
+
+                // ✅ Unified display status: waiting | completed | cancelled
+                Status = MapStatusToText(a.Status, a.IsCancelled),
+
                 ReasonForVisit = a.ReasonForVisit
             })
             .FirstOrDefaultAsync(ct);
 
         // Recent visits
         var recentVisits = await _db.MedicalRecords
+            .AsNoTracking()
             .Where(r => r.PatientId == patientId)
             .OrderByDescending(r => r.RecordDateTime)
             .Take(5)
@@ -81,6 +87,18 @@ public sealed class PatientDashboardQueries : IPatientDashboardQueries
 
             UpcomingAppointment = upcoming,
             RecentVisits = recentVisits
+        };
+    }
+
+    private static string MapStatusToText(byte status, bool isCancelled)
+    {
+        if (isCancelled) return "cancelled";
+
+        return status switch
+        {
+            0 => "waiting",
+            1 => "completed",
+            _ => "unknown"
         };
     }
 
