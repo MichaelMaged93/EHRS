@@ -195,6 +195,12 @@
   <data name="PatientDashboard_PatientNotFound" xml:space="preserve">
     <value>Patient not found</value>
   </data>
+  <data name="PatientMedicalHistory_PatientNotFound" xml:space="preserve">
+    <value>Patient not found</value>
+  </data>
+  <data name="PatientMedicalHistory_ProvideAtLeastOneField" xml:space="preserve">
+    <value>Provide at least chronicDiseases or allergies</value>
+  </data>
   <data name="PatientProfile_GetSuccess" xml:space="preserve">
     <value>Profile loaded successfully.</value>
   </data>

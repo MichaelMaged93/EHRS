@@ -1,4 +1,6 @@
 ﻿using EHRS.Api.Helpers;
+using EHRS.Api.Localization;
+using EHRS.Api.Services;
 using EHRS.Core.Abstractions.Queries;
 using EHRS.Core.Requests.Patients;
 using Microsoft.AspNetCore.Authorization;
@@ -12,9 +14,15 @@ namespace EHRS.Api.Controllers;
 public sealed class PatientMedicalHistoryController : ControllerBase
 {
     private readonly IPatientMedicalHistoryQueries _queries;
+    private readonly IAppLocalizer _loc;
 
-    public PatientMedicalHistoryController(IPatientMedicalHistoryQueries queries)
-        => _queries = queries;
+    public PatientMedicalHistoryController(
+        IPatientMedicalHistoryQueries queries,
+        IAppLocalizer loc)
+    {
+        _queries = queries;
+        _loc = loc;
+    }
 
     [HttpGet]
     public async Task<IActionResult> Get()
@@ -23,7 +31,7 @@ public sealed class PatientMedicalHistoryController : ControllerBase
 
         var result = await _queries.GetMedicalHistoryAsync(patientId);
         return result is null
-            ? NotFound(new { message = "Patient not found." })
+            ? NotFound(new { message = _loc["PatientMedicalHistory_PatientNotFound"] })
             : Ok(result);
     }
 
@@ -31,13 +39,13 @@ public sealed class PatientMedicalHistoryController : ControllerBase
     public async Task<IActionResult> Update([FromBody] UpdatePatientMedicalHistoryRequest request)
     {
         if (request.ChronicDiseases is null && request.Allergies is null)
-            return BadRequest(new { message = "Provide at least chronicDiseases or allergies." });
+            return BadRequest(new { message = _loc["PatientMedicalHistory_ProvideAtLeastOneField"] });
 
         var patientId = ClaimsHelper.GetPatientId(User);
 
         var ok = await _queries.UpdateMedicalHistoryAsync(patientId, request);
         return ok
             ? NoContent()
-            : NotFound(new { message = "Patient not found." });
+            : NotFound(new { message = _loc["PatientMedicalHistory_PatientNotFound"] });
     }
 }

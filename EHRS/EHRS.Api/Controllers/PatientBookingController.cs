@@ -81,6 +81,10 @@ public sealed class PatientBookingController : ControllerBase
         {
             return BadRequest(new { message = MapBookingError(ex.Message) });
         }
+        catch
+        {
+            return StatusCode(500, new { message = _t["Common_UnexpectedError"] });
+        }
     }
 
     private string MapBookingError(string rawMessage)

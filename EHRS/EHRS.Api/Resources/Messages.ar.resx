@@ -195,6 +195,12 @@
   <data name="PatientDashboard_PatientNotFound" xml:space="preserve">
     <value>المريض غير موجود.</value>
   </data>
+  <data name="PatientMedicalHistory_PatientNotFound" xml:space="preserve">
+    <value>المريض غير موجود.</value>
+  </data>
+  <data name="PatientMedicalHistory_ProvideAtLeastOneField" xml:space="preserve">
+    <value>أدخل على الأقل الأمراض المزمنة أو الحساسية.</value>
+  </data>
   <data name="PatientProfile_GetSuccess" xml:space="preserve">
     <value>تم تحميل الملف الشخصي بنجاح.</value>
   </data>
