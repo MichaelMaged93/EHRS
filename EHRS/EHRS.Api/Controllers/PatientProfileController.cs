@@ -1,5 +1,7 @@
 ﻿using EHRS.Api.Contracts.Patients;
 using EHRS.Api.Helpers;
+using EHRS.Api.Localization;
+using EHRS.Api.Services;
 using EHRS.Core.Abstractions.Queries;
 using EHRS.Core.DTOs.Patients;
 using EHRS.Core.Requests.Patients;
@@ -15,11 +17,16 @@ public sealed class PatientProfileController : ControllerBase
 {
     private readonly IPatientProfileQueries _queries;
     private readonly IWebHostEnvironment _env;
+    private readonly IAppLocalizer _loc;
 
-    public PatientProfileController(IPatientProfileQueries queries, IWebHostEnvironment env)
+    public PatientProfileController(
+        IPatientProfileQueries queries,
+        IWebHostEnvironment env,
+        IAppLocalizer loc)
     {
         _queries = queries;
         _env = env;
+        _loc = loc;
     }
 
     [HttpGet]
@@ -28,7 +35,8 @@ public sealed class PatientProfileController : ControllerBase
         var patientId = ClaimsHelper.GetPatientId(User);
 
         var dto = await _queries.GetAsync(patientId, ct);
-        if (dto is null) return NotFound("Patient not found.");
+        if (dto is null)
+            return NotFound(new { message = _loc["PatientProfile_NotFound"] });
 
         return Ok(dto);
     }
@@ -63,11 +71,21 @@ public sealed class PatientProfileController : ControllerBase
 
         if (form.ProfilePicture is not null && form.ProfilePicture.Length > 0)
         {
+            // ✅ Validation (اختياري)
+            const long maxBytes = 5 * 1024 * 1024; // 5MB
+            if (form.ProfilePicture.Length > maxBytes)
+                return BadRequest(new { message = _loc["PatientProfile_ImageTooLarge"] });
+
+            var contentType = (form.ProfilePicture.ContentType ?? string.Empty).ToLowerInvariant();
+            if (contentType is not ("image/jpeg" or "image/png"))
+                return BadRequest(new { message = _loc["PatientProfile_InvalidImage"] });
+
             relativePath = await SavePatientProfilePictureAsync(patientId, form.ProfilePicture, ct);
         }
 
         var dto = await _queries.UpdateAsync(patientId, request, relativePath, ct);
-        if (dto is null) return NotFound("Patient not found.");
+        if (dto is null)
+            return NotFound(new { message = _loc["PatientProfile_NotFound"] });
 
         return Ok(dto);
     }

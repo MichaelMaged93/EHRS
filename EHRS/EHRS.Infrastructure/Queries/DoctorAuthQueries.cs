@@ -1,4 +1,5 @@
 ﻿using EHRS.Core.Abstractions.Queries;
+using EHRS.Core.Common;
 using EHRS.Core.DTOs.Auth;
 using EHRS.Core.Requests.DoctorAuth;
 using EHRS.Infrastructure.Persistence;
@@ -14,18 +15,18 @@ public sealed class DoctorAuthQueries : IDoctorAuthQueries
 
     public DoctorAuthQueries(EHRSContext db) => _db = db;
 
-    public async Task<(bool Success, string Message)> RegisterAsync(DoctorRegisterRequest request)
+    public async Task<(bool Success, DoctorAuthError Error)> RegisterAsync(DoctorRegisterRequest request)
     {
         if (request.Password != request.ConfirmPassword)
-            return (false, "Passwords do not match.");
+            return (false, DoctorAuthError.PasswordsDoNotMatch);
 
         var emailExists = await _db.Doctors.AnyAsync(d => d.Email == request.Email);
         if (emailExists)
-            return (false, "Email already exists.");
+            return (false, DoctorAuthError.EmailAlreadyExists);
 
         var licenseExists = await _db.Doctors.AnyAsync(d => d.MedicalLicense == request.MedicalLicense);
         if (licenseExists)
-            return (false, "Medical license already exists.");
+            return (false, DoctorAuthError.MedicalLicenseAlreadyExists);
 
         var doctor = new Doctor
         {
@@ -52,39 +53,42 @@ public sealed class DoctorAuthQueries : IDoctorAuthQueries
         _db.UserCredentials.Add(cred);
         await _db.SaveChangesAsync();
 
-        return (true, "Registration submitted and pending approval.");
+        return (true, DoctorAuthError.None);
     }
 
-    public async Task<AuthUserDto> LoginAsync(DoctorLoginRequest request)
+    public async Task<(bool Success, DoctorAuthError Error, AuthUserDto? User)> LoginAsync(DoctorLoginRequest request)
     {
         var doctor = await _db.Doctors.FirstOrDefaultAsync(d => d.Email == request.Email);
         if (doctor is null)
-            throw new UnauthorizedAccessException("Invalid email or password.");
+            return (false, DoctorAuthError.InvalidCredentials, null);
 
         // ApprovalStatus: 0 Pending, 1 Approved, 2 Rejected
         if (doctor.ApprovalStatus == 0)
-            throw new InvalidOperationException("Your registration is still under review.");
+            return (false, DoctorAuthError.PendingApproval, null);
+
         if (doctor.ApprovalStatus == 2)
-            throw new InvalidOperationException("Your registration request was rejected.");
+            return (false, DoctorAuthError.Rejected, null);
 
         var cred = await _db.UserCredentials.FirstOrDefaultAsync(c =>
             c.Role == "Doctor" && c.DoctorId == doctor.DoctorId);
 
         if (cred is null)
-            throw new UnauthorizedAccessException("Invalid email or password.");
+            return (false, DoctorAuthError.InvalidCredentials, null);
 
         var hasher = new PasswordHasher<string>();
         var verify = hasher.VerifyHashedPassword("Doctor", cred.PasswordHash, request.Password);
 
         if (verify == PasswordVerificationResult.Failed)
-            throw new UnauthorizedAccessException("Invalid email or password.");
+            return (false, DoctorAuthError.InvalidCredentials, null);
 
-        return new AuthUserDto
+        var user = new AuthUserDto
         {
             UserId = doctor.DoctorId,
             Role = "Doctor",
             FullName = doctor.FullName,
             Email = doctor.Email
         };
+
+        return (true, DoctorAuthError.None, user);
     }
 }

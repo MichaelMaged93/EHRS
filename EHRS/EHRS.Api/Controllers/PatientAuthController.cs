@@ -1,5 +1,7 @@
-﻿using EHRS.Api.Services;
+﻿using EHRS.Api.Localization;
+using EHRS.Api.Services;
 using EHRS.Core.Abstractions.Queries;
+using EHRS.Core.Common;
 using EHRS.Core.DTOs.Auth;
 using EHRS.Core.Requests.PatientAuth;
 using Microsoft.AspNetCore.Mvc;
@@ -12,20 +14,34 @@ public sealed class PatientAuthController : ControllerBase
 {
     private readonly IPatientAuthQueries _queries;
     private readonly JwtTokenService _jwt;
+    private readonly IAppLocalizer _t;
 
-    public PatientAuthController(IPatientAuthQueries queries, JwtTokenService jwt)
+    public PatientAuthController(
+        IPatientAuthQueries queries,
+        JwtTokenService jwt,
+        IAppLocalizer t)
     {
         _queries = queries;
         _jwt = jwt;
+        _t = t;
     }
 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] PatientRegisterRequest request)
     {
+        var (success, error, user) = await _queries.RegisterAsync(request);
+
+        if (!success)
+            return BadRequest(new { message = MapRegisterError(error) });
+
         try
         {
-            var user = await _queries.RegisterAsync(request);
-            var (token, exp) = _jwt.CreateToken(user.UserId, user.Role, user.FullName, user.Email, rememberMe: false);
+            var (token, exp) = _jwt.CreateToken(
+                user!.UserId,
+                user.Role,
+                user.FullName,
+                user.Email,
+                rememberMe: false);
 
             return Ok(new AuthTokenDto
             {
@@ -34,19 +50,36 @@ public sealed class PatientAuthController : ControllerBase
                 User = user
             });
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException)
         {
-            return BadRequest(new { message = ex.Message });
+            return StatusCode(500, new { message = _t["Common_UnexpectedError"] });
         }
     }
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] PatientLoginRequest request)
     {
+        var (success, error, user) = await _queries.LoginAsync(request);
+
+        if (!success)
+        {
+            return error switch
+            {
+                PatientAuthError.InvalidCredentials =>
+                    Unauthorized(new { message = _t["Auth_InvalidCredentials"] }),
+                _ =>
+                    BadRequest(new { message = _t["Auth_InvalidCredentials"] })
+            };
+        }
+
         try
         {
-            var user = await _queries.LoginAsync(request);
-            var (token, exp) = _jwt.CreateToken(user.UserId, user.Role, user.FullName, user.Email, request.RememberMe);
+            var (token, exp) = _jwt.CreateToken(
+                user!.UserId,
+                user.Role,
+                user.FullName,
+                user.Email,
+                request.RememberMe);
 
             return Ok(new AuthTokenDto
             {
@@ -55,13 +88,20 @@ public sealed class PatientAuthController : ControllerBase
                 User = user
             });
         }
-        catch (UnauthorizedAccessException ex)
+        catch (InvalidOperationException)
         {
-            return Unauthorized(new { message = ex.Message });
+            return StatusCode(500, new { message = _t["Common_UnexpectedError"] });
         }
-        catch (InvalidOperationException ex)
+    }
+
+    private string MapRegisterError(PatientAuthError error)
+    {
+        return error switch
         {
-            return BadRequest(new { message = ex.Message });
-        }
+            PatientAuthError.PasswordsDoNotMatch => _t["Auth_PasswordsDoNotMatch"],
+            PatientAuthError.EmailAlreadyExists => _t["Auth_EmailExists"],
+            PatientAuthError.NationalIdAlreadyExists => _t["Auth_NationalIdExists"],
+            _ => _t["Auth_RegisterFailed"]
+        };
     }
 }

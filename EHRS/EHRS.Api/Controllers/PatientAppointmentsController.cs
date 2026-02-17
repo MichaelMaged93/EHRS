@@ -1,4 +1,6 @@
 ﻿using EHRS.Api.Helpers;
+using EHRS.Api.Localization;
+using EHRS.Api.Services;
 using EHRS.Core.Abstractions.Queries;
 using EHRS.Core.Common;
 using EHRS.Core.DTOs.Patients;
@@ -14,13 +16,17 @@ namespace EHRS.Api.Controllers;
 public sealed class PatientAppointmentsController : ControllerBase
 {
     private readonly IPatientAppointmentsQueries _queries;
+    private readonly IAppLocalizer _loc;
 
-    public PatientAppointmentsController(IPatientAppointmentsQueries queries)
+    public PatientAppointmentsController(
+        IPatientAppointmentsQueries queries,
+        IAppLocalizer loc)
     {
         _queries = queries;
+        _loc = loc;
     }
 
-    // Upcoming فقط (اللي لسه هيتراح)
+    // Upcoming فقط
     [HttpGet]
     public async Task<ActionResult<PagedResult<PatientAppointmentCardDto>>> GetUpcoming(
         [FromQuery] PatientAppointmentsQuery query,
@@ -40,7 +46,10 @@ public sealed class PatientAppointmentsController : ControllerBase
         var ok = await _queries.CancelAsync(patientId, id, ct);
 
         if (!ok)
-            return BadRequest("Cannot cancel this appointment (not found, not yours, already past, or invalid).");
+            return BadRequest(new
+            {
+                message = _loc["PatientAppointments_CannotCancel"]
+            });
 
         return NoContent();
     }

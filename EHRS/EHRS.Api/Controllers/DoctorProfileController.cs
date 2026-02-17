@@ -1,5 +1,7 @@
 ﻿using EHRS.Api.Contracts.Doctors;
 using EHRS.Api.Helpers;
+using EHRS.Api.Localization;
+using EHRS.Api.Services;
 using EHRS.Core.Abstractions.Queries;
 using EHRS.Core.Dtos.Doctors;
 using EHRS.Core.Interfaces;
@@ -15,13 +17,16 @@ public sealed class DoctorProfileController : ControllerBase
 {
     private readonly IDoctorProfileQueries _queries;
     private readonly IDoctorProfileService _service;
+    private readonly IAppLocalizer _loc;
 
     public DoctorProfileController(
         IDoctorProfileQueries queries,
-        IDoctorProfileService service)
+        IDoctorProfileService service,
+        IAppLocalizer loc)
     {
         _queries = queries;
         _service = service;
+        _loc = loc;
     }
 
     [HttpGet]
@@ -36,7 +41,7 @@ public sealed class DoctorProfileController : ControllerBase
         }
         catch (KeyNotFoundException)
         {
-            return NotFound();
+            return NotFound(new { message = _loc["DoctorProfile_NotFound"] });
         }
     }
 
@@ -76,7 +81,7 @@ public sealed class DoctorProfileController : ControllerBase
         {
             var ext = Path.GetExtension(form.CertificatePdfFile.FileName);
             if (!string.Equals(ext, ".pdf", StringComparison.OrdinalIgnoreCase))
-                return BadRequest("CertificatePdfFile must be a PDF.");
+                return BadRequest(new { message = _loc["DoctorProfile_CertificateMustBePdf"] });
 
             var fileName = $"certificate_{Guid.NewGuid():N}.pdf";
             var fullPath = Path.Combine(uploadsFolder, fileName);
@@ -102,6 +107,8 @@ public sealed class DoctorProfileController : ControllerBase
             certificatePdfPath,
             ct);
 
-        return ok ? NoContent() : NotFound();
+        return ok
+            ? NoContent()
+            : NotFound(new { message = _loc["DoctorProfile_NotFound"] });
     }
 }

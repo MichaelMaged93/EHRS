@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System.Globalization;
+using System.Text;
+using EHRS.Api.Localization;
 using EHRS.Api.Services;
 using EHRS.Core.Abstractions.Queries;
 using EHRS.Core.Interfaces;
@@ -7,7 +9,9 @@ using EHRS.Infrastructure.Queries;
 using EHRS.Infrastructure.Queries.Patients;
 using EHRS.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -21,6 +25,28 @@ namespace EHRS.Api
 
             // Controllers
             builder.Services.AddControllers();
+
+            // ✅ Localization (ar / en) - Resources folder
+            builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+
+            builder.Services.Configure<RequestLocalizationOptions>(options =>
+            {
+                var supportedCultures = new[]
+                {
+                    new CultureInfo("en"),
+                    new CultureInfo("ar")
+                };
+
+                options.DefaultRequestCulture = new RequestCulture("en");
+                options.SupportedCultures = supportedCultures;
+                options.SupportedUICultures = supportedCultures;
+
+                // Priority: Accept-Language header
+                options.RequestCultureProviders = new List<IRequestCultureProvider>
+                {
+                    new AcceptLanguageHeaderRequestCultureProvider()
+                };
+            });
 
             // Swagger + Bearer Auth
             builder.Services.AddEndpointsApiExplorer();
@@ -89,6 +115,9 @@ namespace EHRS.Api
 
             builder.Services.AddAuthorization();
 
+            // ✅ Helper: App Localizer (Messages.resx / Messages.ar.resx)
+            builder.Services.AddScoped<IAppLocalizer, AppLocalizer>();
+
             // Services
             builder.Services.AddScoped<IDoctorService, DoctorService>();
             builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
@@ -131,6 +160,10 @@ namespace EHRS.Api
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
+
+            // ✅ Apply Localization (must be before Authentication/Authorization)
+            var locOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>();
+            app.UseRequestLocalization(locOptions.Value);
 
             // ✅ لازم Authentication قبل Authorization
             app.UseAuthentication();

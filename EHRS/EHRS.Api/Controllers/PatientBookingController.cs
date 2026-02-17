@@ -1,4 +1,5 @@
 ﻿using EHRS.Api.Helpers;
+using EHRS.Api.Localization;
 using EHRS.Core.Abstractions.Queries;
 using EHRS.Core.DTOs.Patients;
 using EHRS.Core.Requests.Patients;
@@ -13,10 +14,12 @@ namespace EHRS.Api.Controllers;
 public sealed class PatientBookingController : ControllerBase
 {
     private readonly IPatientBookingQueries _queries;
+    private readonly IAppLocalizer _t;
 
-    public PatientBookingController(IPatientBookingQueries queries)
+    public PatientBookingController(IPatientBookingQueries queries, IAppLocalizer t)
     {
         _queries = queries;
+        _t = t;
     }
 
     // GET: /api/PatientBooking/areas
@@ -30,11 +33,11 @@ public sealed class PatientBookingController : ControllerBase
     // GET: /api/PatientBooking/specialties?area=Sohag
     [HttpGet("specialties")]
     public async Task<ActionResult<IReadOnlyList<string>>> GetSpecialties(
-        [FromQuery] string area,
+        [FromQuery] string? area,
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(area))
-            return BadRequest("area is required.");
+            return BadRequest(new { message = _t["Booking_AreaRequired"] });
 
         var result = await _queries.GetSpecialtiesAsync(area, ct);
         return Ok(result);
@@ -43,15 +46,15 @@ public sealed class PatientBookingController : ControllerBase
     // GET: /api/PatientBooking/doctors?area=Sohag&specialty=Cardiology
     [HttpGet("doctors")]
     public async Task<ActionResult<IReadOnlyList<PatientBookingDoctorDto>>> GetDoctors(
-        [FromQuery] string area,
-        [FromQuery] string specialty,
+        [FromQuery] string? area,
+        [FromQuery] string? specialty,
         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(area))
-            return BadRequest("area is required.");
+            return BadRequest(new { message = _t["Booking_AreaRequired"] });
 
         if (string.IsNullOrWhiteSpace(specialty))
-            return BadRequest("specialty is required.");
+            return BadRequest(new { message = _t["Booking_SpecialtyRequired"] });
 
         var result = await _queries.GetDoctorsAsync(area, specialty, ct);
         return Ok(result);
@@ -72,11 +75,36 @@ public sealed class PatientBookingController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = MapBookingError(ex.Message) });
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = MapBookingError(ex.Message) });
         }
+    }
+
+    private string MapBookingError(string rawMessage)
+    {
+        var m = (rawMessage ?? string.Empty).Trim();
+
+        if (m.Contains("area", StringComparison.OrdinalIgnoreCase))
+            return _t["Booking_InvalidArea"];
+
+        if (m.Contains("special", StringComparison.OrdinalIgnoreCase))
+            return _t["Booking_InvalidSpecialty"];
+
+        if (m.Contains("doctor", StringComparison.OrdinalIgnoreCase) &&
+            m.Contains("not", StringComparison.OrdinalIgnoreCase))
+            return _t["Booking_DoctorNotFound"];
+
+        if (m.Contains("already", StringComparison.OrdinalIgnoreCase) &&
+            m.Contains("book", StringComparison.OrdinalIgnoreCase))
+            return _t["Booking_AlreadyBooked"];
+
+        if (m.Contains("date", StringComparison.OrdinalIgnoreCase) ||
+            m.Contains("past", StringComparison.OrdinalIgnoreCase))
+            return _t["Booking_InvalidDate"];
+
+        return _t["Common_UnexpectedError"];
     }
 }

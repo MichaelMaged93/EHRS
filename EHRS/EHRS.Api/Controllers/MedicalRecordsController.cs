@@ -1,5 +1,7 @@
 ﻿using EHRS.Api.Contracts.MedicalRecords;
 using EHRS.Api.Helpers;
+using EHRS.Api.Localization;
+using EHRS.Api.Services;
 using EHRS.Core.Abstractions.Queries;
 using EHRS.Core.Common;
 using EHRS.Core.DTOs.MedicalRecords;
@@ -18,15 +20,18 @@ namespace EHRS.Api.Controllers
         private readonly IMedicalRecordQueries _queries;
         private readonly IMedicalRecordService _service;
         private readonly IWebHostEnvironment _env;
+        private readonly IAppLocalizer _loc;
 
         public MedicalRecordsController(
             IMedicalRecordQueries queries,
             IMedicalRecordService service,
-            IWebHostEnvironment env)
+            IWebHostEnvironment env,
+            IAppLocalizer loc)
         {
             _queries = queries;
             _service = service;
             _env = env;
+            _loc = loc;
         }
 
         // GET /api/MedicalRecords?page=1&pageSize=10&search=...&dateFrom=...&dateTo=...
@@ -46,7 +51,9 @@ namespace EHRS.Api.Controllers
         public async Task<ActionResult<MedicalRecordDetailsDto>> GetById(int id, CancellationToken ct)
         {
             var record = await _queries.GetByIdAsync(id, ct);
-            if (record is null) return NotFound();
+            if (record is null)
+                return NotFound(new { message = _loc["MedicalRecords_RecordNotFound"] });
+
             return Ok(record);
         }
 
@@ -55,7 +62,9 @@ namespace EHRS.Api.Controllers
         public async Task<ActionResult<MedicalRecordDetailsDto>> GetByAppointment(int appointmentId, CancellationToken ct)
         {
             var record = await _queries.GetByAppointmentAsync(appointmentId, ct);
-            if (record is null) return NotFound();
+            if (record is null)
+                return NotFound(new { message = _loc["MedicalRecords_RecordNotFound"] });
+
             return Ok(record);
         }
 
@@ -68,56 +77,75 @@ namespace EHRS.Api.Controllers
         {
             var doctorId = ClaimsHelper.GetDoctorId(User);
 
-            // 1) Create Medical Record
-            var request = new CreateMedicalRecordRequest
+            try
             {
-                PatientId = form.PatientId,
-                AppointmentId = form.AppointmentId,
-                RecordDateTime = form.RecordDateTime,
-                ChiefComplaint = form.ChiefComplaint,
-                Diagnosis = form.Diagnosis,
-                ClinicalNotes = form.ClinicalNotes,
-                Treatment = form.Treatment,
+                // 1) Create Medical Record
+                var request = new CreateMedicalRecordRequest
+                {
+                    PatientId = form.PatientId,
+                    AppointmentId = form.AppointmentId,
+                    RecordDateTime = form.RecordDateTime,
+                    ChiefComplaint = form.ChiefComplaint,
+                    Diagnosis = form.Diagnosis,
+                    ClinicalNotes = form.ClinicalNotes,
+                    Treatment = form.Treatment,
 
-                // ✅ ممنوع إدخال radiology يدوي -> يبدأ null ويتحدد من upload
-                Radiology = null,
-                PrescriptionImagePath = null
-            };
+                    // ✅ ممنوع إدخال radiology يدوي -> يبدأ null ويتحدد من upload
+                    Radiology = null,
+                    PrescriptionImagePath = null
+                };
 
-            var created = await _service.CreateAsync(doctorId, request, ct);
+                var created = await _service.CreateAsync(doctorId, request, ct);
 
-            // 2) Upload Prescription (اختياري)
-            if (form.PrescriptionFile is not null && form.PrescriptionFile.Length > 0)
-            {
-                await using var stream = form.PrescriptionFile.OpenReadStream();
+                // 2) Upload Prescription (اختياري)
+                if (form.PrescriptionFile is not null && form.PrescriptionFile.Length > 0)
+                {
+                    await using var stream = form.PrescriptionFile.OpenReadStream();
 
-                await _service.UploadPrescriptionAsync(
-                    created.RecordId,
-                    stream,
-                    form.PrescriptionFile.FileName,
-                    _env.WebRootPath,
-                    ct);
+                    await _service.UploadPrescriptionAsync(
+                        created.RecordId,
+                        stream,
+                        form.PrescriptionFile.FileName,
+                        _env.WebRootPath,
+                        ct);
+                }
+
+                // 3) Upload Radiology (اختياري)
+                if (form.RadiologyFile is not null && form.RadiologyFile.Length > 0)
+                {
+                    await using var stream = form.RadiologyFile.OpenReadStream();
+
+                    await _service.UploadRadiologyAsync(
+                        created.RecordId,
+                        stream,
+                        form.RadiologyFile.FileName,
+                        _env.WebRootPath,
+                        ct);
+                }
+
+                // 4) رجّع record النهائي
+                var finalRecord = await _queries.GetByIdAsync(created.RecordId, ct);
+                if (finalRecord is null)
+                    return CreatedAtAction(nameof(GetById), new { id = created.RecordId }, created);
+
+                return CreatedAtAction(nameof(GetById), new { id = finalRecord.RecordId }, finalRecord);
             }
-
-            // 3) Upload Radiology (اختياري)
-            if (form.RadiologyFile is not null && form.RadiologyFile.Length > 0)
+            catch (KeyNotFoundException)
             {
-                await using var stream = form.RadiologyFile.OpenReadStream();
-
-                await _service.UploadRadiologyAsync(
-                    created.RecordId,
-                    stream,
-                    form.RadiologyFile.FileName,
-                    _env.WebRootPath,
-                    ct);
+                return NotFound(new { message = _loc["MedicalRecords_RelatedEntityNotFound"] });
             }
-
-            // 4) رجّع record النهائي
-            var finalRecord = await _queries.GetByIdAsync(created.RecordId, ct);
-            if (finalRecord is null)
-                return CreatedAtAction(nameof(GetById), new { id = created.RecordId }, created);
-
-            return CreatedAtAction(nameof(GetById), new { id = finalRecord.RecordId }, finalRecord);
+            catch (ArgumentException)
+            {
+                return BadRequest(new { message = _loc["MedicalRecords_InvalidData"] });
+            }
+            catch (InvalidOperationException)
+            {
+                return BadRequest(new { message = _loc["MedicalRecords_InvalidOperation"] });
+            }
+            catch
+            {
+                return StatusCode(500, new { message = _loc["Common_UnexpectedError"] });
+            }
         }
     }
 }

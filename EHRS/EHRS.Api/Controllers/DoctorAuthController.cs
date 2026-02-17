@@ -1,5 +1,7 @@
-﻿using EHRS.Api.Services;
+﻿using EHRS.Api.Localization;
+using EHRS.Api.Services;
 using EHRS.Core.Abstractions.Queries;
+using EHRS.Core.Common;
 using EHRS.Core.DTOs.Auth;
 using EHRS.Core.Requests.DoctorAuth;
 using Microsoft.AspNetCore.Mvc;
@@ -12,50 +14,73 @@ public sealed class DoctorAuthController : ControllerBase
 {
     private readonly IDoctorAuthQueries _queries;
     private readonly JwtTokenService _jwt;
+    private readonly IAppLocalizer _loc;
 
-    public DoctorAuthController(IDoctorAuthQueries queries, JwtTokenService jwt)
+    public DoctorAuthController(IDoctorAuthQueries queries, JwtTokenService jwt, IAppLocalizer loc)
     {
         _queries = queries;
         _jwt = jwt;
+        _loc = loc;
     }
 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] DoctorRegisterRequest request)
     {
-        var (success, message) = await _queries.RegisterAsync(request);
-        if (!success) return BadRequest(new { message });
+        var (success, error) = await _queries.RegisterAsync(request);
+
+        if (!success)
+            return BadRequest(new { message = MapRegisterError(error) });
 
         // Register للدكتور = Pending → مش هنرجع JWT
-        return Ok(new { message });
+        return Ok(new { message = _loc["Auth_RegisterSuccess"] });
     }
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] DoctorLoginRequest request)
     {
-        try
-        {
-            var user = await _queries.LoginAsync(request);
-            var (token, exp) = _jwt.CreateToken(user.UserId, user.Role, user.FullName, user.Email, request.RememberMe);
+        var (success, error, user) = await _queries.LoginAsync(request);
 
-            return Ok(new AuthTokenDto
+        if (!success)
+        {
+            return error switch
             {
-                AccessToken = token,
-                ExpiresInMinutes = exp,
-                User = user
-            });
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(new { message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            // Pending / Rejected → 403
-            if (ex.Message.Contains("under review", StringComparison.OrdinalIgnoreCase) ||
-                ex.Message.Contains("rejected", StringComparison.OrdinalIgnoreCase))
-                return StatusCode(403, new { message = ex.Message });
+                DoctorAuthError.InvalidCredentials =>
+                    Unauthorized(new { message = _loc["Auth_InvalidCredentials"] }),
 
-            return BadRequest(new { message = ex.Message });
+                DoctorAuthError.PendingApproval =>
+                    StatusCode(403, new { message = _loc["Auth_DoctorPending"] }),
+
+                DoctorAuthError.Rejected =>
+                    StatusCode(403, new { message = _loc["Auth_DoctorRejected"] }),
+
+                _ =>
+                    BadRequest(new { message = _loc["Auth_RegisterFailed"] })
+            };
         }
+
+        var (token, exp) = _jwt.CreateToken(
+            user!.UserId,
+            user.Role,
+            user.FullName,
+            user.Email,
+            request.RememberMe);
+
+        return Ok(new AuthTokenDto
+        {
+            AccessToken = token,
+            ExpiresInMinutes = exp,
+            User = user
+        });
+    }
+
+    private string MapRegisterError(DoctorAuthError error)
+    {
+        return error switch
+        {
+            DoctorAuthError.PasswordsDoNotMatch => _loc["Auth_PasswordsDoNotMatch"],
+            DoctorAuthError.EmailAlreadyExists => _loc["Auth_EmailExists"],
+            DoctorAuthError.MedicalLicenseAlreadyExists => _loc["Auth_MedicalLicenseExists"],
+            _ => _loc["Auth_RegisterFailed"]
+        };
     }
 }
