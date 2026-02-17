@@ -1,10 +1,12 @@
-﻿using System.IO;
-using EHRS.Api.Helpers;
+﻿using EHRS.Api.Helpers;
+using EHRS.Api.Localization;
+using EHRS.Api.Services;
 using EHRS.Core.Abstractions.Queries;
 using EHRS.Core.DTOs.Prescriptions;
 using EHRS.Core.Requests.Prescriptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.IO;
 
 namespace EHRS.Api.Controllers;
 
@@ -15,11 +17,16 @@ public sealed class PatientPrescriptionsController : ControllerBase
 {
     private readonly IPatientPrescriptionsQueries _queries;
     private readonly IWebHostEnvironment _env;
+    private readonly IAppLocalizer _loc;
 
-    public PatientPrescriptionsController(IPatientPrescriptionsQueries queries, IWebHostEnvironment env)
+    public PatientPrescriptionsController(
+        IPatientPrescriptionsQueries queries,
+        IWebHostEnvironment env,
+        IAppLocalizer loc)
     {
         _queries = queries;
         _env = env;
+        _loc = loc;
     }
 
     [HttpGet]
@@ -31,7 +38,7 @@ public sealed class PatientPrescriptionsController : ControllerBase
 
         var tab = (request.Tab ?? string.Empty).Trim().ToLowerInvariant();
         if (tab is not ("active" or "past"))
-            return BadRequest("Invalid tab. Allowed values: active, past.");
+            return BadRequest(new { message = _loc["PatientPrescriptions_InvalidTab"] });
 
         request.Tab = tab;
 
@@ -51,7 +58,7 @@ public sealed class PatientPrescriptionsController : ControllerBase
         {
             return NotFound(new
             {
-                message = "Prescription not found or not owned by current patient, or no prescription attached.",
+                message = _loc["PatientPrescriptions_NotFoundOrNotOwnedOrMissing"],
                 patientId,
                 recordId
             });
@@ -62,7 +69,7 @@ public sealed class PatientPrescriptionsController : ControllerBase
         {
             return NotFound(new
             {
-                message = "Prescription path is empty in database.",
+                message = _loc["PatientPrescriptions_PathEmptyInDatabase"],
                 patientId,
                 recordId
             });
@@ -97,7 +104,7 @@ public sealed class PatientPrescriptionsController : ControllerBase
             {
                 return NotFound(new
                 {
-                    message = "Prescription file not found on disk.",
+                    message = _loc["PatientPrescriptions_FileNotFoundOnDisk"],
                     patientId,
                     recordId,
                     storedPath = rawPath,

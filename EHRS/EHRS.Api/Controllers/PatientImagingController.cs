@@ -1,4 +1,6 @@
 ﻿using EHRS.Api.Helpers;
+using EHRS.Api.Localization;
+using EHRS.Api.Services;
 using EHRS.Core.Interfaces;
 using EHRS.Core.Requests.ImagingRadiology;
 using Microsoft.AspNetCore.Authorization;
@@ -12,8 +14,15 @@ namespace EHRS.Api.Controllers;
 public sealed class PatientImagingController : ControllerBase
 {
     private readonly IPatientImagingQueries _queries;
+    private readonly IAppLocalizer _loc;
 
-    public PatientImagingController(IPatientImagingQueries queries) => _queries = queries;
+    public PatientImagingController(
+        IPatientImagingQueries queries,
+        IAppLocalizer loc)
+    {
+        _queries = queries;
+        _loc = loc;
+    }
 
     // GET /api/PatientImaging?page=1&pageSize=10&search=...
     [HttpGet]
@@ -33,7 +42,7 @@ public sealed class PatientImagingController : ControllerBase
 
         var item = await _queries.GetPatientImagingByRecordIdAsync(patientId, recordId);
         if (item is null)
-            return NotFound(new { message = "Imaging record not found." });
+            return NotFound(new { message = _loc["PatientImaging_NotFound"] });
 
         return Ok(item);
     }

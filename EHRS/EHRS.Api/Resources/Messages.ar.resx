@@ -195,11 +195,26 @@
   <data name="PatientDashboard_PatientNotFound" xml:space="preserve">
     <value>المريض غير موجود.</value>
   </data>
+  <data name="PatientImaging_NotFound" xml:space="preserve">
+    <value>سجل الأشعة غير موجود.</value>
+  </data>
   <data name="PatientMedicalHistory_PatientNotFound" xml:space="preserve">
     <value>المريض غير موجود.</value>
   </data>
   <data name="PatientMedicalHistory_ProvideAtLeastOneField" xml:space="preserve">
     <value>أدخل على الأقل الأمراض المزمنة أو الحساسية.</value>
+  </data>
+  <data name="PatientPrescriptions_FileNotFoundOnDisk" xml:space="preserve">
+    <value>ملف الروشتة غير موجود على الجهاز.</value>
+  </data>
+  <data name="PatientPrescriptions_InvalidTab" xml:space="preserve">
+    <value>قيمة التبويب غير صحيحة. القيم المسموحة: active, past.</value>
+  </data>
+  <data name="PatientPrescriptions_NotFoundOrNotOwnedOrMissing" xml:space="preserve">
+    <value>الروشتة غير موجودة، أو ليست للمريض الحالي، أو لا توجد</value>
+  </data>
+  <data name="PatientPrescriptions_PathEmptyInDatabase" xml:space="preserve">
+    <value>مسار الروشتة فارغ داخل قاعدة البيانات.</value>
   </data>
   <data name="PatientProfile_GetSuccess" xml:space="preserve">
     <value>تم تحميل الملف الشخصي بنجاح.</value>
@@ -218,5 +233,17 @@
   </data>
   <data name="PatientProfile_UpdateSuccess" xml:space="preserve">
     <value>تم تحديث الملف الشخصي بنجاح.</value>
+  </data>
+  <data name="PatientSurgeries_InvalidDataOrPatientNotFound" xml:space="preserve">
+    <value>بيانات غير صحيحة أو المريض غير موجود.</value>
+  </data>
+  <data name="PatientSurgeries_NotFound" xml:space="preserve">
+    <value>العملية غير موجودة.</value>
+  </data>
+  <data name="PatientSurgeries_NotFoundOrInvalidUpdate" xml:space="preserve">
+    <value>العملية غير موجودة (أو تحديث غير صالح).</value>
+  </data>
+  <data name="PatientSurgeries_SurgeryTypeRequired" xml:space="preserve">
+    <value>نوع العملية مطلوب.</value>
   </data>
 </root>

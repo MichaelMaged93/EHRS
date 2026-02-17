@@ -195,11 +195,26 @@
   <data name="PatientDashboard_PatientNotFound" xml:space="preserve">
     <value>Patient not found</value>
   </data>
+  <data name="PatientImaging_NotFound" xml:space="preserve">
+    <value>Imaging record not found</value>
+  </data>
   <data name="PatientMedicalHistory_PatientNotFound" xml:space="preserve">
     <value>Patient not found</value>
   </data>
   <data name="PatientMedicalHistory_ProvideAtLeastOneField" xml:space="preserve">
     <value>Provide at least chronicDiseases or allergies</value>
+  </data>
+  <data name="PatientPrescriptions_FileNotFoundOnDisk" xml:space="preserve">
+    <value>Prescription file not found on disk</value>
+  </data>
+  <data name="PatientPrescriptions_InvalidTab" xml:space="preserve">
+    <value>Invalid tab. Allowed values: active, past</value>
+  </data>
+  <data name="PatientPrescriptions_NotFoundOrNotOwnedOrMissing" xml:space="preserve">
+    <value>Prescription not found, not owned by current patient, or no prescription attached.</value>
+  </data>
+  <data name="PatientPrescriptions_PathEmptyInDatabase" xml:space="preserve">
+    <value>Prescription path is empty in database</value>
   </data>
   <data name="PatientProfile_GetSuccess" xml:space="preserve">
     <value>Profile loaded successfully.</value>
@@ -218,5 +233,17 @@
   </data>
   <data name="PatientProfile_UpdateSuccess" xml:space="preserve">
     <value>Profile updated successfully</value>
+  </data>
+  <data name="PatientSurgeries_InvalidDataOrPatientNotFound" xml:space="preserve">
+    <value>Invalid data or patient not found</value>
+  </data>
+  <data name="PatientSurgeries_NotFound" xml:space="preserve">
+    <value>Surgery not found</value>
+  </data>
+  <data name="PatientSurgeries_NotFoundOrInvalidUpdate" xml:space="preserve">
+    <value>Surgery not found (or invalid update)</value>
+  </data>
+  <data name="PatientSurgeries_SurgeryTypeRequired" xml:space="preserve">
+    <value>SurgeryType is required</value>
   </data>
 </root>
