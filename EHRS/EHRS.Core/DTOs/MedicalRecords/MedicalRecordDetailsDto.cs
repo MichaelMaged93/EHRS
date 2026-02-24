@@ -17,10 +17,10 @@
         public string? ClinicalNotes { get; set; }
         public string? Treatment { get; set; }
 
-        // ✅ لازم عشان Error بتاع Radiology
+        //  لازم عشان Error بتاع Radiology
         public string? Radiology { get; set; }
 
-        // ✅ لينك/مسار الصورة
+        //  لينك/مسار الصورة
         public string? PrescriptionImagePath { get; set; }
     }
 }

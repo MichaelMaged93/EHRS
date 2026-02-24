@@ -10,7 +10,7 @@ public sealed class PatientPrescriptionCardDto
 
     public DateTime PrescriptionDate { get; set; }
 
-    // 🆕 Medical Record details
+    //  Medical Record details
     public string? ChiefComplaint { get; set; }
 
     public string? Diagnosis { get; set; }

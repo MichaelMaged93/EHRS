@@ -48,7 +48,7 @@ public sealed class PatientAppointmentsQueries : IPatientAppointmentsQueries
                 DoctorProfilePicture = a.Doctor.ProfilePicture,
                 ReasonForVisit = a.ReasonForVisit,
 
-                // ✅ Unified display status:
+                // Unified display status:
                 // cancelled if IsCancelled = true
                 // completed if Status = 1 and not cancelled
                 // waiting otherwise (Status = 0 and not cancelled)

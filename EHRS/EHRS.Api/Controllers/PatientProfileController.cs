@@ -71,7 +71,7 @@ public sealed class PatientProfileController : ControllerBase
 
         if (form.ProfilePicture is not null && form.ProfilePicture.Length > 0)
         {
-            // ✅ Validation (اختياري)
+            //  Validation (اختياري)
             const long maxBytes = 5 * 1024 * 1024; // 5MB
             if (form.ProfilePicture.Length > maxBytes)
                 return BadRequest(new { message = _loc["PatientProfile_ImageTooLarge"] });

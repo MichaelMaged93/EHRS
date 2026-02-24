@@ -68,7 +68,7 @@ namespace EHRS.Api.Controllers
             return Ok(record);
         }
 
-        // ✅ POST /api/MedicalRecords  (Form-Data: بيانات + Files اختيارية)
+        // POST /api/MedicalRecords  (Form-Data: بيانات + Files اختيارية)
         [HttpPost]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<MedicalRecordDetailsDto>> Create(
@@ -90,7 +90,7 @@ namespace EHRS.Api.Controllers
                     ClinicalNotes = form.ClinicalNotes,
                     Treatment = form.Treatment,
 
-                    // ✅ ممنوع إدخال radiology يدوي -> يبدأ null ويتحدد من upload
+                    //  ممنوع إدخال radiology يدوي -> يبدأ null ويتحدد من upload
                     Radiology = null,
                     PrescriptionImagePath = null
                 };

@@ -26,7 +26,7 @@ namespace EHRS.Api
             // Controllers
             builder.Services.AddControllers();
 
-            // ✅ Localization (ar / en) - Resources folder
+            //  Localization (ar / en) - Resources folder
             builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 
             builder.Services.Configure<RequestLocalizationOptions>(options =>
@@ -54,7 +54,7 @@ namespace EHRS.Api
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "EHRS API", Version = "v1" });
 
-                // ✅ Add JWT Bearer to Swagger
+                //  Add JWT Bearer to Swagger
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     Name = "Authorization",
@@ -89,10 +89,10 @@ namespace EHRS.Api
             builder.Services.AddDbContext<EHRSContext>(options =>
                 options.UseSqlServer(connStr));
 
-            // ✅ JWT Token Service (Api)
+            //  JWT Token Service (Api)
             builder.Services.AddSingleton<JwtTokenService>();
 
-            // ✅ JWT Authentication
+            //  JWT Authentication
             var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is missing.");
             var issuer = builder.Configuration["Jwt:Issuer"] ?? "EHRS";
             var audience = builder.Configuration["Jwt:Audience"] ?? "EHRS.Client";
@@ -115,7 +115,7 @@ namespace EHRS.Api
 
             builder.Services.AddAuthorization();
 
-            // ✅ Helper: App Localizer (Messages.resx / Messages.ar.resx)
+            //  Helper: App Localizer (Messages.resx / Messages.ar.resx)
             builder.Services.AddScoped<IAppLocalizer, AppLocalizer>();
 
             // Services
@@ -146,7 +146,7 @@ namespace EHRS.Api
             // Patient Imaging & Radiology
             builder.Services.AddScoped<IPatientImagingQueries, PatientImagingQueries>();
 
-            // ✅ Auth Queries (Patient/Doctor)
+            //  Auth Queries (Patient/Doctor)
             builder.Services.AddScoped<IPatientAuthQueries, PatientAuthQueries>();
             builder.Services.AddScoped<IDoctorAuthQueries, DoctorAuthQueries>();
 
@@ -161,11 +161,11 @@ namespace EHRS.Api
             app.UseHttpsRedirection();
             app.UseStaticFiles();
 
-            // ✅ Apply Localization (must be before Authentication/Authorization)
+            //  Apply Localization (must be before Authentication/Authorization)
             var locOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>();
             app.UseRequestLocalization(locOptions.Value);
 
-            // ✅ لازم Authentication قبل Authorization
+            //  لازم Authentication قبل Authorization
             app.UseAuthentication();
             app.UseAuthorization();
 

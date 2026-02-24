@@ -88,7 +88,7 @@ namespace EHRS.Infrastructure.Queries
                     ClinicalNotes = r.ClinicalNotes,
                     Treatment = r.Treatment,
 
-                    // ✅ FIX: include Radiology
+                    //  FIX: include Radiology
                     Radiology = r.Radiology,
 
                     PrescriptionImagePath = r.PrescriptionImagePath
@@ -113,8 +113,6 @@ namespace EHRS.Infrastructure.Queries
                     Diagnosis = r.Diagnosis,
                     ClinicalNotes = r.ClinicalNotes,
                     Treatment = r.Treatment,
-
-                    // ✅ FIX: include Radiology
                     Radiology = r.Radiology,
 
                     PrescriptionImagePath = r.PrescriptionImagePath

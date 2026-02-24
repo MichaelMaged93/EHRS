@@ -5,13 +5,13 @@ namespace EHRS.Core.Abstractions.Queries;
 
 public interface IPatientBookingQueries
 {
-    // ✅ Booking (Create) بالتاريخ فقط
+    //  Booking (Create) بالتاريخ فقط
     Task<PatientBookingDto> CreateAsync(
         int patientId,
         CreatePatientBookingRequest request,
         CancellationToken ct);
 
-    // ✅ Dropdowns للـ UI
+    //  Dropdowns لل UI
     Task<IReadOnlyList<string>> GetAreasAsync(CancellationToken ct);
 
     Task<IReadOnlyList<string>> GetSpecialtiesAsync(string area, CancellationToken ct);

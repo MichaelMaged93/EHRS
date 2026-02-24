@@ -12,7 +12,7 @@ public sealed class DoctorResponse
     public decimal? Salary { get; set; }
     public string? ProfilePicture { get; set; }
 
-    // ✅ Path للـ PDF
+    //  Pathللـ PDF
     public string? Certificates { get; set; }
 
     public DateTime CreatedAt { get; set; }

@@ -41,7 +41,7 @@ public sealed class PatientDashboardQueries : IPatientDashboardQueries
                 DoctorId = a.DoctorId,
                 DoctorName = a.Doctor.FullName,
 
-                // ✅ Unified display status: waiting | completed | cancelled
+                //  Unified display status: waiting | completed | cancelled
                 Status = MapStatusToText(a.Status, a.IsCancelled),
 
                 ReasonForVisit = a.ReasonForVisit

@@ -8,7 +8,7 @@ public sealed class AppLocalizer : IAppLocalizer
 
     public AppLocalizer(IStringLocalizerFactory factory)
     {
-        // ✅ With ResourcesPath="Resources" => baseName is "Messages"
+        //  With ResourcesPath="Resources" => baseName is "Messages"
         _localizer = factory.Create("Messages", "EHRS.Api");
     }
 

@@ -14,10 +14,10 @@ namespace EHRS.Api.Contracts.MedicalRecords
         public string? ClinicalNotes { get; set; }
         public string? Treatment { get; set; }
 
-        // ✅ Prescription Image
+        //Prescription Image
         public IFormFile? PrescriptionFile { get; set; }
 
-        // ✅ Radiology Image
+        //Radiology Image
         public IFormFile? RadiologyFile { get; set; }
     }
 }

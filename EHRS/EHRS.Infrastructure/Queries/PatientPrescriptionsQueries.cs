@@ -72,7 +72,7 @@ public sealed class PatientPrescriptionsQueries : IPatientPrescriptionsQueries
 
                 PrescriptionDate = m.RecordDateTime,
 
-                // ✅ Medical Record details (NEW)
+                //  Medical Record details (NEW)
                 ChiefComplaint = m.ChiefComplaint,
                 Diagnosis = m.Diagnosis,
                 Treatment = m.Treatment,
