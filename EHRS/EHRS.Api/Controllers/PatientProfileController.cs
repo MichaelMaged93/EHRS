@@ -48,8 +48,6 @@ public sealed class PatientProfileController : ControllerBase
         CancellationToken ct)
     {
         var patientId = ClaimsHelper.GetPatientId(User);
-
-        // نحول الـ Form لـ Core Request (بنفس pattern عندنا)
         var request = new UpdatePatientProfileRequest
         {
             FullName = form.FullName,
@@ -71,7 +69,7 @@ public sealed class PatientProfileController : ControllerBase
 
         if (form.ProfilePicture is not null && form.ProfilePicture.Length > 0)
         {
-            //  Validation (اختياري)
+            //  Validation 
             const long maxBytes = 5 * 1024 * 1024; // 5MB
             if (form.ProfilePicture.Length > maxBytes)
                 return BadRequest(new { message = _loc["PatientProfile_ImageTooLarge"] });

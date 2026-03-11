@@ -4,7 +4,7 @@ namespace EHRS.Core.DTOs.Dashboard
     public class TodayDashboardDto
     {
         public int DoctorId { get; set; }
-        public DateTime Date { get; set; }          // تاريخ اليوم (Cairo)
+        public DateTime Date { get; set; }      
         public int WaitingCount { get; set; }
         public int CompletedCount { get; set; }
         public int CancelledCount { get; set; }

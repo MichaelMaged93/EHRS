@@ -8,7 +8,6 @@ public sealed class PatientBookingDto
 
     public int DoctorId { get; set; }
 
-    //  تاريخ فقط
     public DateOnly AppointmentDate { get; set; }
 
     public byte Status { get; set; }

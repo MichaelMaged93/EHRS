@@ -38,7 +38,6 @@ public sealed class PatientMedicalHistoryQueries : IPatientMedicalHistoryQueries
         var patient = await _db.Patients.FirstOrDefaultAsync(p => p.PatientId == patientId);
         if (patient is null) return false;
 
-        // null => سيب القديم كما هو
         if (request.ChronicDiseases is not null)
             patient.Diseases = JoinCsv(NormalizeList(request.ChronicDiseases));
 
@@ -98,7 +97,6 @@ public sealed class PatientMedicalHistoryQueries : IPatientMedicalHistoryQueries
 
         if (entity is null) return false;
 
-        // لازم يبقى فيه حاجة للتعديل
         if (request.SurgeryType is null && request.SurgeryDate is null && request.Notes is null)
             return false;
 

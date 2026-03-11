@@ -31,7 +31,7 @@ public sealed class DoctorAuthController : ControllerBase
         if (!success)
             return BadRequest(new { message = MapRegisterError(error) });
 
-        // Register للدكتور = Pending مش هنرجع JWT
+        // Register
         return Ok(new { message = _loc["Auth_RegisterSuccess"] });
     }
 

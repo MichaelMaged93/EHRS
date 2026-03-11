@@ -125,12 +125,10 @@ public sealed class PatientBookingQueries : IPatientBookingQueries
             !string.Equals(doctor.Specialization.Trim(), specialty, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("Selected doctor does not belong to the selected specialty.");
 
-        //  تحويل DateOnly إلى DateTime ثابت (00:00:00)
         var appointmentDateTime = request.AppointmentDate.ToDateTime(new TimeOnly(0, 0));
         var dayStart = appointmentDateTime.Date;
         var dayEnd = appointmentDateTime.Date.AddDays(1);
 
-        //  منع نفس المريض يحجز نفس الدكتور في نفس اليوم
         var duplicateSameDoctorSameDay = await _context.Appointments.AnyAsync(a =>
             a.PatientId == patientId &&
             a.DoctorId == request.DoctorId &&

@@ -26,7 +26,7 @@ public sealed class PatientAppointmentsController : ControllerBase
         _loc = loc;
     }
 
-    // Upcoming فقط
+    // Upcoming
     [HttpGet]
     public async Task<ActionResult<PagedResult<PatientAppointmentCardDto>>> GetUpcoming(
         [FromQuery] PatientAppointmentsQuery query,

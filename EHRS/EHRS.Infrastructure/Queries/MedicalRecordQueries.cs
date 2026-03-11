@@ -70,6 +70,33 @@ namespace EHRS.Infrastructure.Queries
             };
         }
 
+        public async Task<List<MedicalRecordDetailsDto>> GetByPatientAsync(
+    int doctorId,
+    int patientId,
+    CancellationToken ct)
+        {
+            return await _db.MedicalRecords
+                .AsNoTracking()
+                .Where(r => r.PatientId == patientId && r.DoctorId == doctorId)
+                .OrderByDescending(r => r.RecordDateTime)
+                .Select(r => new MedicalRecordDetailsDto
+                {
+                    RecordId = r.RecordId,
+                    PatientId = r.PatientId,
+                    PatientName = r.Patient.FullName,
+                    DoctorId = r.DoctorId,
+                    AppointmentId = r.AppointmentId,
+                    RecordDateTime = r.RecordDateTime,
+                    ChiefComplaint = r.ChiefComplaint,
+                    Diagnosis = r.Diagnosis,
+                    ClinicalNotes = r.ClinicalNotes,
+                    Treatment = r.Treatment,
+                    Radiology = r.Radiology,
+                    PrescriptionImagePath = r.PrescriptionImagePath
+                })
+                .ToListAsync(ct);
+        }
+
         public async Task<MedicalRecordDetailsDto?> GetByIdAsync(int recordId, CancellationToken ct)
         {
             return await _db.MedicalRecords

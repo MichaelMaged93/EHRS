@@ -9,7 +9,6 @@ namespace EHRS.Infrastructure.Queries
     {
         private readonly EHRSContext _db;
 
-        // عدّل الرقم ده لو Status عندكم مختلف
         private const byte CompletedStatusValue = 2;
 
         public DashboardQueries(EHRSContext db)

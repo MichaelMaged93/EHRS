@@ -5,19 +5,15 @@ public sealed class PatientDashboardDto
     public int PatientId { get; set; }
     public string FullName { get; set; } = string.Empty;
 
-    // From Patient table
     public short? HeightCm { get; set; }
     public decimal? WeightKg { get; set; }
     public string? BloodType { get; set; }
     public decimal? Bmi { get; set; }
 
-    // From SensorDatum (latest)
     public PatientVitalSignsDto VitalSigns { get; set; } = new();
 
-    // From Appointments (next upcoming)
     public PatientUpcomingAppointmentDto? UpcomingAppointment { get; set; }
 
-    // From MedicalRecords (recent)
     public List<PatientRecentVisitDto> RecentVisits { get; set; } = new();
 }
 
@@ -50,5 +46,5 @@ public sealed class PatientRecentVisitDto
     public DateTime RecordDateTime { get; set; }
 
     public string? Diagnosis { get; set; }
-    public string? Notes { get; set; } // ClinicalNotes
+    public string? Notes { get; set; } 
 }

@@ -77,7 +77,7 @@ public sealed class PatientPrescriptionsController : ControllerBase
 
         var webRoot = _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
 
-        // 1) absolute path: use as-is
+        // 1) absolute path
         string candidatePath;
         if (Path.IsPathRooted(rawPath))
         {
@@ -88,7 +88,7 @@ public sealed class PatientPrescriptionsController : ControllerBase
             // normalize slashes
             var normalized = rawPath.Replace('\\', '/').TrimStart('/');
 
-            // If DB stores "uploads/..." => map to wwwroot/uploads/...
+            // If DB stores
             candidatePath = Path.Combine(webRoot, normalized.Replace('/', Path.DirectorySeparatorChar));
         }
 

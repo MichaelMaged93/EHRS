@@ -14,5 +14,9 @@ namespace EHRS.Core.Abstractions.Queries
         Task<MedicalRecordDetailsDto?> GetByIdAsync(int recordId, CancellationToken ct);
 
         Task<MedicalRecordDetailsDto?> GetByAppointmentAsync(int appointmentId, CancellationToken ct);
+        Task<List<MedicalRecordDetailsDto>> GetByPatientAsync(
+            int doctorId,
+            int patientId,
+            CancellationToken ct);
     }
 }

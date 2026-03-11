@@ -76,10 +76,8 @@ public sealed class PatientAppointmentsQueries : IPatientAppointmentsQueries
 
         if (appt is null) return false;
 
-        // لو already cancelled اعتبرها نجاح (Idempotent)
         if (appt.IsCancelled) return true;
 
-        // نسمح بالإلغاء للمواعيد القادمة فقط (زي UI)
         if (appt.AppointmentDateTime < DateTime.UtcNow)
             return false;
 

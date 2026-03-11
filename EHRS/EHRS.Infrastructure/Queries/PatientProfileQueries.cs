@@ -49,7 +49,6 @@ public sealed class PatientProfileQueries : IPatientProfileQueries
         var p = await _db.Patients.FindAsync(new object?[] { patientId }, ct);
         if (p is null) return null;
 
-        // Partial update: لو null ما نغيرش
         if (request.FullName is not null) p.FullName = request.FullName;
         if (request.Gender is not null) p.Gender = request.Gender;
         if (request.BirthDate is not null) p.BirthDate = request.BirthDate;

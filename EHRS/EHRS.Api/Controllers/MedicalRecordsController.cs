@@ -34,7 +34,7 @@ namespace EHRS.Api.Controllers
             _loc = loc;
         }
 
-        // GET /api/MedicalRecords?page=1&pageSize=10&search=...&dateFrom=...&dateTo=...
+        // GET /api/MedicalRecords?page=1&pageSize=10&search=
         [HttpGet]
         public async Task<ActionResult<PagedResult<MedicalRecordListItemDto>>> Get(
             [FromQuery] MedicalRecordQuery query,
@@ -68,7 +68,21 @@ namespace EHRS.Api.Controllers
             return Ok(record);
         }
 
-        // POST /api/MedicalRecords  (Form-Data: بيانات + Files اختيارية)
+        // GET /api/MedicalRecords/by-patient/{patientId}
+        [HttpGet("by-patient/{patientId:int}")]
+        public async Task<ActionResult<List<MedicalRecordDetailsDto>>> GetByPatient(int patientId, CancellationToken ct)
+        {
+            var doctorId = ClaimsHelper.GetDoctorId(User);
+
+            var records = await _queries.GetByPatientAsync(doctorId, patientId, ct);
+
+            if (records is null || records.Count == 0)
+                return NotFound(new { message = _loc["MedicalRecords_RecordNotFound"] });
+
+            return Ok(records);
+        }
+
+        // POST /api/MedicalRecords 
         [HttpPost]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<MedicalRecordDetailsDto>> Create(
@@ -89,15 +103,11 @@ namespace EHRS.Api.Controllers
                     Diagnosis = form.Diagnosis,
                     ClinicalNotes = form.ClinicalNotes,
                     Treatment = form.Treatment,
-
-                    //  ممنوع إدخال radiology يدوي -> يبدأ null ويتحدد من upload
                     Radiology = null,
                     PrescriptionImagePath = null
                 };
 
                 var created = await _service.CreateAsync(doctorId, request, ct);
-
-                // 2) Upload Prescription (اختياري)
                 if (form.PrescriptionFile is not null && form.PrescriptionFile.Length > 0)
                 {
                     await using var stream = form.PrescriptionFile.OpenReadStream();
@@ -109,8 +119,6 @@ namespace EHRS.Api.Controllers
                         _env.WebRootPath,
                         ct);
                 }
-
-                // 3) Upload Radiology (اختياري)
                 if (form.RadiologyFile is not null && form.RadiologyFile.Length > 0)
                 {
                     await using var stream = form.RadiologyFile.OpenReadStream();
@@ -122,8 +130,6 @@ namespace EHRS.Api.Controllers
                         _env.WebRootPath,
                         ct);
                 }
-
-                // 4) رجّع record النهائي
                 var finalRecord = await _queries.GetByIdAsync(created.RecordId, ct);
                 if (finalRecord is null)
                     return CreatedAtAction(nameof(GetById), new { id = created.RecordId }, created);
