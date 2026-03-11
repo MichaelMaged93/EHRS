@@ -1,8 +1,12 @@
-﻿namespace EHRS.Core.DTOs.Patients;
+﻿using System;
+using System.Collections.Generic;
 
-public sealed class PatientMedicalHistoryDto
+namespace EHRS.Core.DTOs.Patients
 {
-    public List<string> ChronicDiseases { get; set; } = new();
-    public List<string> Allergies { get; set; } = new();
-    public List<PatientSurgeryDto> Surgeries { get; set; } = new();
+    public sealed class PatientMedicalHistoryDto
+    {
+        public List<string> ChronicDiseases { get; set; } = new();
+        public List<string> Allergies { get; set; } = new();
+        public List<PatientSurgeryDto> Surgeries { get; set; } = new();
+    }
 }

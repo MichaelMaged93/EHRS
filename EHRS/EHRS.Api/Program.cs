@@ -130,7 +130,8 @@ namespace EHRS.Api
             builder.Services.AddScoped<IDoctorProfileQueries, DoctorProfileQueries>();
             builder.Services.AddScoped<IPatientProfileQueries, PatientProfileQueries>();
             builder.Services.AddScoped<IPatientPrescriptionsQueries, PatientPrescriptionsQueries>();
-
+            // Doctor Patients Queries
+            builder.Services.AddScoped<IDoctorPatientQueries, DoctorPatientQueries>();
             // Patient Medical History (Diseases / Allergies)
             builder.Services.AddScoped<IPatientMedicalHistoryQueries, PatientMedicalHistoryQueries>();
 
