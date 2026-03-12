@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using EHRS.Infrastructure.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace EHRS.Infrastructure.Persistence;
+namespace EHRS.Infrastructure.TempEntities;
 
 public partial class EHRSContext : DbContext
 {
@@ -32,7 +31,7 @@ public partial class EHRSContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=.;Database=EHR_Wearable_DB;Trusted_Connection=True;TrustServerCertificate=True");
+        => optionsBuilder.UseSqlServer("Server=.;Database=EHR_Wearable_DB;Trusted_Connection=True;TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -172,19 +171,23 @@ public partial class EHRSContext : DbContext
                 .HasConstraintName("FK_SensorData_Patient");
         });
 
-        //modelBuilder.Entity<SurgeryHistory>(entity =>
-        //{
-        //    entity.HasKey(e => e.SurgeryId).HasName("PK__SurgeryH__08AD55FD37A0F35E");
+        modelBuilder.Entity<SurgeryHistory>(entity =>
+        {
+            entity.HasKey(e => e.SurgeryId).HasName("PK__SurgeryH__08AD55FD37A0F35E");
 
-        //    entity.ToTable("SurgeryHistory");
+            entity.ToTable("SurgeryHistory");
 
-        //    entity.Property(e => e.Notes).HasMaxLength(300);
-        //    entity.Property(e => e.SurgeryType).HasMaxLength(150);
+            entity.Property(e => e.Notes).HasMaxLength(300);
+            entity.Property(e => e.SurgeryType).HasMaxLength(150);
 
-        //    entity.HasOne(d => d.Patient).WithMany(p => p.SurgeryHistories)
-        //        .HasForeignKey(d => d.PatientId)
-        //        .HasConstraintName("FK_SurgeryHistory_Patient");
-        //});
+            entity.HasOne(d => d.Doctor).WithMany(p => p.SurgeryHistories)
+                .HasForeignKey(d => d.DoctorId)
+                .HasConstraintName("FK_SurgeryHistory_Doctor");
+
+            entity.HasOne(d => d.Patient).WithMany(p => p.SurgeryHistories)
+                .HasForeignKey(d => d.PatientId)
+                .HasConstraintName("FK_SurgeryHistory_Patient");
+        });
 
         modelBuilder.Entity<UserCredential>(entity =>
         {

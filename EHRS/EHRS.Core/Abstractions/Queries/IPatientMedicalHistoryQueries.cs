@@ -6,14 +6,9 @@ namespace EHRS.Core.Abstractions.Queries;
 public interface IPatientMedicalHistoryQueries
 {
     Task<PatientMedicalHistoryDto?> GetMedicalHistoryAsync(int patientId);
-
     Task<bool> UpdateMedicalHistoryAsync(int patientId, UpdatePatientMedicalHistoryRequest request);
-
     Task<List<PatientSurgeryDto>> GetSurgeriesAsync(int patientId);
-
-    Task<int> CreateSurgeryAsync(int patientId, CreateSurgeryRequest request);
-
-    Task<bool> UpdateSurgeryAsync(int patientId, int surgeryId, UpdateSurgeryRequest request);
-
-    Task<bool> DeleteSurgeryAsync(int patientId, int surgeryId);
+    Task<int> CreateSurgeryAsync(int patientId, int doctorId, CreateSurgeryRequest request);
+    Task<bool> UpdateSurgeryAsync(int patientId, int doctorId, int surgeryId, UpdateSurgeryRequest request);
+    Task<bool> DeleteSurgeryAsync(int patientId, int doctorId, int surgeryId);
 }

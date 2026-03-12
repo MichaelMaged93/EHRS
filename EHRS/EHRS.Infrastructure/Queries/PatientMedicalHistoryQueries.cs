@@ -64,7 +64,7 @@ public sealed class PatientMedicalHistoryQueries : IPatientMedicalHistoryQueries
             .ToListAsync();
     }
 
-    public async Task<int> CreateSurgeryAsync(int patientId, CreateSurgeryRequest request)
+    public async Task<int> CreateSurgeryAsync(int patientId, int doctorId, CreateSurgeryRequest request)
     {
         var patientExists = await _db.Patients.AnyAsync(p => p.PatientId == patientId);
         if (!patientExists) return 0;
@@ -80,6 +80,7 @@ public sealed class PatientMedicalHistoryQueries : IPatientMedicalHistoryQueries
         var entity = new SurgeryHistory
         {
             PatientId = patientId,
+            DoctorId = doctorId,
             SurgeryType = type,
             SurgeryDate = request.SurgeryDate,
             Notes = notes
@@ -90,15 +91,12 @@ public sealed class PatientMedicalHistoryQueries : IPatientMedicalHistoryQueries
         return entity.SurgeryId;
     }
 
-    public async Task<bool> UpdateSurgeryAsync(int patientId, int surgeryId, UpdateSurgeryRequest request)
+    public async Task<bool> UpdateSurgeryAsync(int patientId, int doctorId, int surgeryId, UpdateSurgeryRequest request)
     {
         var entity = await _db.SurgeryHistories
-            .FirstOrDefaultAsync(s => s.SurgeryId == surgeryId && s.PatientId == patientId);
+            .FirstOrDefaultAsync(s => s.SurgeryId == surgeryId && s.PatientId == patientId && s.DoctorId == doctorId);
 
         if (entity is null) return false;
-
-        if (request.SurgeryType is null && request.SurgeryDate is null && request.Notes is null)
-            return false;
 
         if (request.SurgeryType is not null)
         {
@@ -124,10 +122,10 @@ public sealed class PatientMedicalHistoryQueries : IPatientMedicalHistoryQueries
         return true;
     }
 
-    public async Task<bool> DeleteSurgeryAsync(int patientId, int surgeryId)
+    public async Task<bool> DeleteSurgeryAsync(int patientId, int doctorId, int surgeryId)
     {
         var entity = await _db.SurgeryHistories
-            .FirstOrDefaultAsync(s => s.SurgeryId == surgeryId && s.PatientId == patientId);
+            .FirstOrDefaultAsync(s => s.SurgeryId == surgeryId && s.PatientId == patientId && s.DoctorId == doctorId);
 
         if (entity is null) return false;
 
@@ -136,7 +134,6 @@ public sealed class PatientMedicalHistoryQueries : IPatientMedicalHistoryQueries
         return true;
     }
 
-    // ---------------- helpers ----------------
     private static List<string> NormalizeList(IEnumerable<string> items)
     {
         return items
