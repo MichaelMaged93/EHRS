@@ -33,21 +33,6 @@ public sealed class PatientMedicalHistoryQueries : IPatientMedicalHistoryQueries
         };
     }
 
-    public async Task<bool> UpdateMedicalHistoryAsync(int patientId, UpdatePatientMedicalHistoryRequest request)
-    {
-        var patient = await _db.Patients.FirstOrDefaultAsync(p => p.PatientId == patientId);
-        if (patient is null) return false;
-
-        if (request.ChronicDiseases is not null)
-            patient.Diseases = JoinCsv(NormalizeList(request.ChronicDiseases));
-
-        if (request.Allergies is not null)
-            patient.Allergies = JoinCsv(NormalizeList(request.Allergies));
-
-        await _db.SaveChangesAsync();
-        return true;
-    }
-
     public async Task<List<PatientSurgeryDto>> GetSurgeriesAsync(int patientId)
     {
         return await _db.SurgeryHistories
@@ -59,6 +44,7 @@ public sealed class PatientMedicalHistoryQueries : IPatientMedicalHistoryQueries
                 SurgeryId = s.SurgeryId,
                 SurgeryType = s.SurgeryType,
                 SurgeryDate = s.SurgeryDate,
+                DoctorId = (int)s.DoctorId, // يظهر DoctorId للمريض
                 Notes = s.Notes
             })
             .ToListAsync();
@@ -72,6 +58,7 @@ public sealed class PatientMedicalHistoryQueries : IPatientMedicalHistoryQueries
         var type = request.SurgeryType?.Trim();
         if (string.IsNullOrWhiteSpace(type) || type.Length < 2 || type.Length > 100) return 0;
 
+        // منع تواريخ المستقبل
         if (request.SurgeryDate > DateOnly.FromDateTime(DateTime.UtcNow)) return 0;
 
         var notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim();
@@ -130,6 +117,21 @@ public sealed class PatientMedicalHistoryQueries : IPatientMedicalHistoryQueries
         if (entity is null) return false;
 
         _db.SurgeryHistories.Remove(entity);
+        await _db.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> UpdateMedicalHistoryAsync(int patientId, UpdatePatientMedicalHistoryRequest request)
+    {
+        var patient = await _db.Patients.FirstOrDefaultAsync(p => p.PatientId == patientId);
+        if (patient is null) return false;
+
+        if (request.ChronicDiseases is not null)
+            patient.Diseases = JoinCsv(NormalizeList(request.ChronicDiseases));
+
+        if (request.Allergies is not null)
+            patient.Allergies = JoinCsv(NormalizeList(request.Allergies));
+
         await _db.SaveChangesAsync();
         return true;
     }

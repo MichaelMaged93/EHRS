@@ -11,5 +11,8 @@ public interface IPatientAppointmentsQueries
         PatientAppointmentsQuery query,
         CancellationToken ct = default);
 
-    Task<bool> CancelAsync(int patientId, int appointmentId, CancellationToken ct = default);
+    Task<bool> CancelAsync(
+        int patientId,
+        int appointmentId,
+        CancellationToken ct = default);
 }

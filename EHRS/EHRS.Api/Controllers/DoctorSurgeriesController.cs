@@ -27,6 +27,9 @@ public sealed class DoctorSurgeriesController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.SurgeryType))
             return BadRequest(new { message = _loc["PatientSurgeries_SurgeryTypeRequired"] });
 
+        if (request.SurgeryDate > DateOnly.FromDateTime(DateTime.UtcNow))
+            return BadRequest(new { message = _loc["PatientSurgeries_CannotCreateFutureDate"] });
+
         var doctorId = ClaimsHelper.GetDoctorId(User);
         var id = await _queries.CreateSurgeryAsync(patientId, doctorId, request);
 
@@ -39,6 +42,10 @@ public sealed class DoctorSurgeriesController : ControllerBase
     public async Task<IActionResult> Update([FromRoute] int surgeryId, [FromQuery] int patientId, [FromBody] UpdateSurgeryRequest request)
     {
         var doctorId = ClaimsHelper.GetDoctorId(User);
+
+        if (request.SurgeryDate.HasValue && request.SurgeryDate.Value > DateOnly.FromDateTime(DateTime.UtcNow))
+            return BadRequest(new { message = _loc["PatientSurgeries_CannotUpdateFutureDate"] });
+
         var ok = await _queries.UpdateSurgeryAsync(patientId, doctorId, surgeryId, request);
         return ok
             ? NoContent()

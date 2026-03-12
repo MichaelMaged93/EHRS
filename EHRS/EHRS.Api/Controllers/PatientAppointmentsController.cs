@@ -1,6 +1,5 @@
 ﻿using EHRS.Api.Helpers;
 using EHRS.Api.Localization;
-using EHRS.Api.Services;
 using EHRS.Core.Abstractions.Queries;
 using EHRS.Core.Common;
 using EHRS.Core.DTOs.Patients;
@@ -26,7 +25,7 @@ public sealed class PatientAppointmentsController : ControllerBase
         _loc = loc;
     }
 
-    // Upcoming
+    // Upcoming appointments
     [HttpGet]
     public async Task<ActionResult<PagedResult<PatientAppointmentCardDto>>> GetUpcoming(
         [FromQuery] PatientAppointmentsQuery query,
@@ -38,6 +37,7 @@ public sealed class PatientAppointmentsController : ControllerBase
         return Ok(result);
     }
 
+    // Cancel appointment
     [HttpPost("{id:int}/cancel")]
     public async Task<IActionResult> Cancel(int id, CancellationToken ct)
     {

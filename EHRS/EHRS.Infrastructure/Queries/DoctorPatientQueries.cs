@@ -54,6 +54,7 @@ namespace EHRS.Infrastructure.Queries
                             SurgeryId = s.SurgeryId,
                             SurgeryType = s.SurgeryType,
                             SurgeryDate = s.SurgeryDate.ToDateTime(TimeOnly.MinValue),
+                            DoctorId = s.DoctorId, // ارجاع DoctorId مباشرة
                             Notes = s.Notes
                         }).ToList()
                 })

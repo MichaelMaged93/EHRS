@@ -14,9 +14,7 @@ public sealed class PatientSurgeriesController : ControllerBase
     private readonly IPatientMedicalHistoryQueries _queries;
     private readonly IAppLocalizer _loc;
 
-    public PatientSurgeriesController(
-        IPatientMedicalHistoryQueries queries,
-        IAppLocalizer loc)
+    public PatientSurgeriesController(IPatientMedicalHistoryQueries queries, IAppLocalizer loc)
     {
         _queries = queries;
         _loc = loc;

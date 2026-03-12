@@ -48,13 +48,9 @@ public sealed class PatientAppointmentsQueries : IPatientAppointmentsQueries
                 DoctorProfilePicture = a.Doctor.ProfilePicture,
                 ReasonForVisit = a.ReasonForVisit,
 
-                // Unified display status:
-                // cancelled if IsCancelled = true
-                // completed if Status = 1 and not cancelled
-                // waiting otherwise (Status = 0 and not cancelled)
                 Status = a.IsCancelled
                     ? "cancelled"
-                    : a.Status == 1
+                    : a.Status == 2
                         ? "completed"
                         : "waiting"
             })
@@ -69,19 +65,34 @@ public sealed class PatientAppointmentsQueries : IPatientAppointmentsQueries
         };
     }
 
-    public async Task<bool> CancelAsync(int patientId, int appointmentId, CancellationToken ct = default)
+    public async Task<bool> CancelAsync(
+        int patientId,
+        int appointmentId,
+        CancellationToken ct = default)
     {
         var appt = await _db.Appointments
-            .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId && a.PatientId == patientId, ct);
+            .FirstOrDefaultAsync(a =>
+                a.AppointmentId == appointmentId &&
+                a.PatientId == patientId,
+                ct);
 
-        if (appt is null) return false;
+        if (appt is null)
+            return false;
 
-        if (appt.IsCancelled) return true;
+        // already cancelled
+        if (appt.IsCancelled)
+            return false;
 
+        // completed appointment cannot be cancelled
+        if (appt.Status == 2)
+            return false;
+
+        // past appointment cannot be cancelled
         if (appt.AppointmentDateTime < DateTime.UtcNow)
             return false;
 
         appt.IsCancelled = true;
+
         await _db.SaveChangesAsync(ct);
 
         return true;
