@@ -2,7 +2,7 @@
 
 public sealed class AppointmentQuery
 {
-    public string Scope { get; init; } = "upcoming"; // upcoming | past
+    //public string Scope { get; init; } = "upcoming"; // upcoming | past
     public string? Status { get; init; }            // waiting | completed | cancelled
     public string? Search { get; init; }
 

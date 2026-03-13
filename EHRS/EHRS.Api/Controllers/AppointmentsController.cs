@@ -20,14 +20,25 @@ public sealed class AppointmentsController : ControllerBase
         _queries = queries;
     }
 
-    [HttpGet]
-    public async Task<ActionResult<PagedResult<AppointmentListItemDto>>> Get(
+    [HttpGet("upcoming")]
+    public async Task<ActionResult<PagedResult<AppointmentListItemDto>>> GetUpcoming(
         [FromQuery] AppointmentQuery query,
         CancellationToken ct)
     {
         var doctorId = ClaimsHelper.GetDoctorId(User);
 
-        var result = await _queries.GetDoctorAppointmentsAsync(doctorId, query, ct);
+        var result = await _queries.GetDoctorUpcomingAppointmentsAsync(doctorId, query, ct);
+        return Ok(result);
+    }
+
+    [HttpGet("past")]
+    public async Task<ActionResult<PagedResult<AppointmentListItemDto>>> GetPast(
+        [FromQuery] AppointmentQuery query,
+        CancellationToken ct)
+    {
+        var doctorId = ClaimsHelper.GetDoctorId(User);
+
+        var result = await _queries.GetDoctorPastAppointmentsAsync(doctorId, query, ct);
         return Ok(result);
     }
 }

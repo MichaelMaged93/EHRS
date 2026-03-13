@@ -26,7 +26,7 @@ namespace EHRS.Api
             // Controllers
             builder.Services.AddControllers();
 
-            //  Localization (ar / en) - Resources folder
+            // Localization (ar / en) - Resources folder
             builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 
             builder.Services.Configure<RequestLocalizationOptions>(options =>
@@ -41,7 +41,6 @@ namespace EHRS.Api
                 options.SupportedCultures = supportedCultures;
                 options.SupportedUICultures = supportedCultures;
 
-                // Priority: Accept-Language header
                 options.RequestCultureProviders = new List<IRequestCultureProvider>
                 {
                     new AcceptLanguageHeaderRequestCultureProvider()
@@ -53,8 +52,6 @@ namespace EHRS.Api
             builder.Services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "EHRS API", Version = "v1" });
-
-                //  Add JWT Bearer to Swagger
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     Name = "Authorization",
@@ -64,7 +61,6 @@ namespace EHRS.Api
                     In = ParameterLocation.Header,
                     Description = "Enter: Bearer {your JWT token}"
                 });
-
                 c.AddSecurityRequirement(new OpenApiSecurityRequirement
                 {
                     {
@@ -89,10 +85,10 @@ namespace EHRS.Api
             builder.Services.AddDbContext<EHRSContext>(options =>
                 options.UseSqlServer(connStr));
 
-            //  JWT Token Service (Api)
+            // JWT Token Service (Api)
             builder.Services.AddSingleton<JwtTokenService>();
 
-            //  JWT Authentication
+            // JWT Authentication
             var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is missing.");
             var issuer = builder.Configuration["Jwt:Issuer"] ?? "EHRS";
             var audience = builder.Configuration["Jwt:Audience"] ?? "EHRS.Client";
@@ -115,7 +111,7 @@ namespace EHRS.Api
 
             builder.Services.AddAuthorization();
 
-            //  Helper: App Localizer (Messages.resx / Messages.ar.resx)
+            // Helper: App Localizer
             builder.Services.AddScoped<IAppLocalizer, AppLocalizer>();
 
             // Services
@@ -130,8 +126,10 @@ namespace EHRS.Api
             builder.Services.AddScoped<IDoctorProfileQueries, DoctorProfileQueries>();
             builder.Services.AddScoped<IPatientProfileQueries, PatientProfileQueries>();
             builder.Services.AddScoped<IPatientPrescriptionsQueries, PatientPrescriptionsQueries>();
+
             // Doctor Patients Queries
             builder.Services.AddScoped<IDoctorPatientQueries, DoctorPatientQueries>();
+
             // Patient Medical History (Diseases / Allergies)
             builder.Services.AddScoped<IPatientMedicalHistoryQueries, PatientMedicalHistoryQueries>();
 
@@ -147,9 +145,12 @@ namespace EHRS.Api
             // Patient Imaging & Radiology
             builder.Services.AddScoped<IPatientImagingQueries, PatientImagingQueries>();
 
-            //  Auth Queries (Patient/Doctor)
+            // Auth Queries (Patient/Doctor)
             builder.Services.AddScoped<IPatientAuthQueries, PatientAuthQueries>();
             builder.Services.AddScoped<IDoctorAuthQueries, DoctorAuthQueries>();
+
+            // ** Doctor Surgeries Queries (NEW) **
+            builder.Services.AddScoped<IDoctorSurgeryQueries, DoctorSurgeryQueries>();
 
             var app = builder.Build();
 
@@ -162,11 +163,10 @@ namespace EHRS.Api
             app.UseHttpsRedirection();
             app.UseStaticFiles();
 
-            //  Apply Localization (must be before Authentication/Authorization)
+            // Apply Localization
             var locOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>();
             app.UseRequestLocalization(locOptions.Value);
 
-            //  لازم Authentication قبل Authorization
             app.UseAuthentication();
             app.UseAuthorization();
 

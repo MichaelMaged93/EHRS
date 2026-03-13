@@ -3,6 +3,7 @@ using EHRS.Core.Common;
 using EHRS.Core.Dtos.Appointments;
 using EHRS.Core.Requests.Appointments;
 using EHRS.Infrastructure.Persistence;
+using EHRS.Infrastructure.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace EHRS.Infrastructure.Queries;
@@ -16,7 +17,7 @@ public sealed class AppointmentQueries : IAppointmentQueries
         _db = db;
     }
 
-    public async Task<PagedResult<AppointmentListItemDto>> GetDoctorAppointmentsAsync(
+    public async Task<PagedResult<AppointmentListItemDto>> GetDoctorUpcomingAppointmentsAsync(
         int doctorId,
         AppointmentQuery q,
         CancellationToken ct)
@@ -25,34 +26,46 @@ public sealed class AppointmentQueries : IAppointmentQueries
 
         var baseQuery = _db.Appointments
             .AsNoTracking()
-            .Where(a => a.DoctorId == doctorId);
+            .Where(a => a.DoctorId == doctorId &&
+                        a.AppointmentDateTime.Date >= today);
 
-        // scope: upcoming | past
-        if (string.Equals(q.Scope, "past", StringComparison.OrdinalIgnoreCase))
-            baseQuery = baseQuery.Where(a => a.AppointmentDateTime.Date < today);
-        else
-            baseQuery = baseQuery.Where(a => a.AppointmentDateTime.Date >= today);
+        return await BuildResult(baseQuery, q, ct);
+    }
 
-        // status filter: waiting / completed / cancelled
+    public async Task<PagedResult<AppointmentListItemDto>> GetDoctorPastAppointmentsAsync(
+        int doctorId,
+        AppointmentQuery q,
+        CancellationToken ct)
+    {
+        var today = DateTime.UtcNow.Date;
+
+        var baseQuery = _db.Appointments
+            .AsNoTracking()
+            .Where(a => a.DoctorId == doctorId &&
+                        a.AppointmentDateTime.Date < today);
+
+        return await BuildResult(baseQuery, q, ct);
+    }
+
+    private async Task<PagedResult<AppointmentListItemDto>> BuildResult(
+        IQueryable<Appointment> baseQuery,
+        AppointmentQuery q,
+        CancellationToken ct)
+    {
+        // Status filter: waiting / completed / cancelled
         if (!string.IsNullOrWhiteSpace(q.Status))
         {
             var st = q.Status.Trim().ToLowerInvariant();
 
             if (st == "cancelled")
-            {
                 baseQuery = baseQuery.Where(a => a.IsCancelled);
-            }
             else if (st == "waiting")
-            {
                 baseQuery = baseQuery.Where(a => a.Status == 0 && !a.IsCancelled);
-            }
             else if (st == "completed")
-            {
                 baseQuery = baseQuery.Where(a => a.Status == 1 && !a.IsCancelled);
-            }
         }
 
-        // search: AppointmentId OR Patient FullName
+        // Search: AppointmentId OR Patient FullName
         if (!string.IsNullOrWhiteSpace(q.Search))
         {
             var s = q.Search.Trim();
@@ -66,7 +79,6 @@ public sealed class AppointmentQueries : IAppointmentQueries
         var page = q.Page <= 0 ? 1 : q.Page;
         var pageSize = (q.PageSize <= 0 || q.PageSize > 100) ? 20 : q.PageSize;
 
-        // Pull minimal raw fields from DB (include IsCancelled)
         var rows = await baseQuery
             .OrderByDescending(a => a.AppointmentDateTime)
             .Skip((page - 1) * pageSize)
@@ -82,7 +94,6 @@ public sealed class AppointmentQueries : IAppointmentQueries
             })
             .ToListAsync(ct);
 
-        // Map to DTO (status + isCancelled -> text)
         var items = rows.Select(r => new AppointmentListItemDto
         {
             AppointmentId = r.AppointmentId,
@@ -108,7 +119,8 @@ public sealed class AppointmentQueries : IAppointmentQueries
         return status switch
         {
             0 => "waiting",
-            1 => "completed",
+            1 => "waiting",
+            2 => "completed",
             _ => "unknown"
         };
     }

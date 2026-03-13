@@ -6,7 +6,12 @@ namespace EHRS.Core.Abstractions.Queries;
 
 public interface IAppointmentQueries
 {
-    Task<PagedResult<AppointmentListItemDto>> GetDoctorAppointmentsAsync(
+    Task<PagedResult<AppointmentListItemDto>> GetDoctorUpcomingAppointmentsAsync(
+        int doctorId,
+        AppointmentQuery query,
+        CancellationToken ct);
+
+    Task<PagedResult<AppointmentListItemDto>> GetDoctorPastAppointmentsAsync(
         int doctorId,
         AppointmentQuery query,
         CancellationToken ct);

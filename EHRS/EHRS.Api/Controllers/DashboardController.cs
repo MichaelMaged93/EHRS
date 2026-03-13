@@ -21,11 +21,17 @@ namespace EHRS.Api.Controllers
         [HttpGet("today")]
         public async Task<ActionResult<TodayDashboardDto>> GetToday(
             [FromQuery] string? status,
+            [FromQuery] string? search,
             CancellationToken ct)
         {
             var doctorId = ClaimsHelper.GetDoctorId(User);
 
-            var result = await _queries.GetTodayDashboardAsync(doctorId, status, ct);
+            var result = await _queries.GetTodayDashboardAsync(
+                doctorId,
+                status,
+                search,
+                ct);
+
             return Ok(result);
         }
     }

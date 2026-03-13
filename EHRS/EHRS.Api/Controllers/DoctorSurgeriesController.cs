@@ -1,9 +1,12 @@
 ﻿using EHRS.Api.Helpers;
 using EHRS.Api.Localization;
 using EHRS.Core.Abstractions.Queries;
+using EHRS.Core.DTOs.DoctorPatients;
 using EHRS.Core.Requests.Patients;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace EHRS.Api.Controllers;
 
@@ -13,11 +16,16 @@ namespace EHRS.Api.Controllers;
 public sealed class DoctorSurgeriesController : ControllerBase
 {
     private readonly IPatientMedicalHistoryQueries _queries;
+    private readonly IDoctorSurgeryQueries _doctorSurgeryQueries;
     private readonly IAppLocalizer _loc;
 
-    public DoctorSurgeriesController(IPatientMedicalHistoryQueries queries, IAppLocalizer loc)
+    public DoctorSurgeriesController(
+        IPatientMedicalHistoryQueries queries,
+        IDoctorSurgeryQueries doctorSurgeryQueries,
+        IAppLocalizer loc)
     {
         _queries = queries;
+        _doctorSurgeryQueries = doctorSurgeryQueries;
         _loc = loc;
     }
 
@@ -60,5 +68,13 @@ public sealed class DoctorSurgeriesController : ControllerBase
         return ok
             ? NoContent()
             : NotFound(new { message = _loc["PatientSurgeries_NotFound"] });
+    }
+
+    [HttpGet("all")]
+    public async Task<IActionResult> GetAllSurgeries()
+    {
+        var doctorId = ClaimsHelper.GetDoctorId(User);
+        var surgeries = await _doctorSurgeryQueries.GetSurgeriesByDoctorAsync(doctorId);
+        return Ok(surgeries);
     }
 }

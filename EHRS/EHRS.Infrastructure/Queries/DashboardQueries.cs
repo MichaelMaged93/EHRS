@@ -19,6 +19,7 @@ namespace EHRS.Infrastructure.Queries
         public async Task<TodayDashboardDto> GetTodayDashboardAsync(
             int doctorId,
             string? status,
+            string? search,
             CancellationToken ct)
         {
             var start = DateTime.Today;
@@ -40,6 +41,15 @@ namespace EHRS.Infrastructure.Queries
                 HasMedicalRecord = (a.MedicalRecord != null),
                 a.AppointmentDateTime
             });
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLower();
+
+                projected = projected.Where(x =>
+                    x.PatientName != null &&
+                    x.PatientName.ToLower().Contains(s));
+            }
 
             if (!string.IsNullOrWhiteSpace(status))
             {
