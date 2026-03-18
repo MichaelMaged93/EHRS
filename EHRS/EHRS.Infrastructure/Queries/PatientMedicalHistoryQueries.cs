@@ -44,7 +44,7 @@ public sealed class PatientMedicalHistoryQueries : IPatientMedicalHistoryQueries
                 SurgeryId = s.SurgeryId,
                 SurgeryType = s.SurgeryType,
                 SurgeryDate = s.SurgeryDate,
-                DoctorId = (int)s.DoctorId, // يظهر DoctorId للمريض
+                DoctorId = (int)s.DoctorId, 
                 Notes = s.Notes
             })
             .ToListAsync();
@@ -58,7 +58,6 @@ public sealed class PatientMedicalHistoryQueries : IPatientMedicalHistoryQueries
         var type = request.SurgeryType?.Trim();
         if (string.IsNullOrWhiteSpace(type) || type.Length < 2 || type.Length > 100) return 0;
 
-        // منع تواريخ المستقبل
         if (request.SurgeryDate > DateOnly.FromDateTime(DateTime.UtcNow)) return 0;
 
         var notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim();

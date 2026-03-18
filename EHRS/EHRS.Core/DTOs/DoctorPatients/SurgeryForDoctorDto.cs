@@ -7,7 +7,7 @@ namespace EHRS.Core.DTOs.DoctorPatients
         public int SurgeryId { get; set; }
         public string SurgeryType { get; set; } = default!;
         public DateTime SurgeryDate { get; set; }
-        public int? DoctorId { get; set; } // nullable لتجنب أي مشكلة عند القراءة
+        public int? DoctorId { get; set; } // nullable 
         public string? Notes { get; set; }
     }
 }
