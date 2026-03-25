@@ -20,7 +20,6 @@ namespace EHRS.Infrastructure.Queries
 
         public async Task<DoctorPatientDtos.PatientMedicalHistoryDto?> GetMedicalRecordsBySsnAsync(string ssn)
         {
-            // جلب البيانات من قاعدة البيانات بدون استخدام دوال C# داخل LINQ
             var patientData = await _db.Patients
                 .Where(p => p.Ssn == ssn)
                 .Select(p => new
@@ -48,7 +47,6 @@ namespace EHRS.Infrastructure.Queries
 
             if (patientData == null) return null;
 
-            // حساب العمر بعد جلب البيانات على الـ client
             int age = patientData.BirthDate.HasValue
                 ? CalculateAge(patientData.BirthDate.Value.ToDateTime(TimeOnly.MinValue))
                 : 0;
@@ -69,12 +67,19 @@ namespace EHRS.Infrastructure.Queries
 
         public async Task<DoctorPatientDtos.PatientSurgeriesDto?> GetSurgeriesBySsnAsync(string ssn)
         {
-            return await _db.Patients
+            var patientData = await _db.Patients
                 .Where(p => p.Ssn == ssn)
-                .Select(p => new DoctorPatientDtos.PatientSurgeriesDto
+                .Select(p => new
                 {
-                    PatientId = p.PatientId,
-                    FullName = p.FullName,
+                    p.PatientId,
+                    p.FullName,
+                    p.BloodType,
+                    p.HeightCm,
+                    p.WeightKg,
+                    p.BirthDate,
+                    p.Diseases,
+                    p.Allergies,
+
                     Surgeries = p.SurgeryHistories
                         .OrderByDescending(s => s.SurgeryDate)
                         .Select(s => new DoctorPatientDtos.SurgeryForDoctorDto
@@ -87,6 +92,25 @@ namespace EHRS.Infrastructure.Queries
                         }).ToList()
                 })
                 .FirstOrDefaultAsync();
+
+            if (patientData == null) return null;
+
+            int age = patientData.BirthDate.HasValue
+                ? CalculateAge(patientData.BirthDate.Value.ToDateTime(TimeOnly.MinValue))
+                : 0;
+
+            return new DoctorPatientDtos.PatientSurgeriesDto
+            {
+                PatientId = patientData.PatientId,
+                FullName = patientData.FullName,
+                BloodType = patientData.BloodType,
+                HeightCm = patientData.HeightCm,
+                WeightKg = patientData.WeightKg,
+                Age = age,
+                ChronicDiseases = SplitCsv(patientData.Diseases),
+                Allergies = SplitCsv(patientData.Allergies),
+                Surgeries = patientData.Surgeries
+            };
         }
 
         #region Helpers
