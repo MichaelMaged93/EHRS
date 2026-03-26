@@ -1,199 +1,271 @@
-﻿# 🏥 EHRS – Electronic Health Record System (Backend)
+# 🏥 EHRS – Electronic Health Record System (Backend)
 
-Electronic Health Record System (EHRS) is a backend RESTful API built using ASP.NET Core (.NET 8) following Clean Architecture principles.  
-It manages healthcare data for Patients and Doctors with secure authentication, localization, file handling, and structured querying.
+Electronic Health Record System (EHRS) is a **RESTful Backend API** built using **ASP.NET Core (.NET 8)** following **Clean Architecture** and **Database First approach**.
+
+The system manages healthcare workflows between **Patients and Doctors**, ensuring scalability, maintainability, and real-world readiness.
 
 ---
 
 ## 🚀 Features
 
 ### 🔐 Authentication & Authorization
-- JWT-based authentication
-- Role-based authorization (Patient / Doctor)
-- Secure password hashing
-- Doctor approval workflow (Pending / Approved / Rejected)
+- Centralized authentication using `UserCredential` table
+- Secure password hashing (no password stored in Patient/Doctor tables)
+- Role-based system:
+  - Patient
+  - Doctor
+- Doctor approval workflow:
+  - `Pending`
+  - `Approved`
+  - `Rejected`
+- Ready for JWT Authentication (next phase)
+
+---
 
 ### 👨‍⚕️ Doctor Module
-- Register & Login
-- Doctor Profile (update with image & certificates upload)
-- View Today Dashboard
-- Manage Appointments
-- Create & Manage Medical Records
-- Upload Prescriptions & Radiology files
+- Full Doctor CRUD (Admin)
+- Doctor Profile Management
+  - Partial updates
+  - Profile image upload
+  - Certificates upload (PDF)
+- Doctor Dashboard (Today view)
+- Appointments Management (Paging + Filtering)
+- Access Patient Data using SSN:
+  - Medical History
+  - Surgeries
+- Create Medical Records
+- Upload Prescription files
+
+---
 
 ### 👩‍🦱 Patient Module
-- Register & Login
-- Profile Management (with image upload)
-- Dashboard (BMI, upcoming appointments, sensor data)
-- Book Appointment (Area → Specialty → Doctor → Date)
-- Cancel Appointment
+- Patient Profile Management
+- Patient Dashboard
+- View Appointments
+- Smart Appointment Booking
 - View Medical History
-- Manage Surgeries
+- View Surgeries
 - View Imaging & Radiology
-- View & Download Prescriptions
+- Full healthcare data overview
 
 ---
 
-## 🌍 Localization
-- Full Arabic & English support
-- Language selected via `Accept-Language` header
-- Centralized resource-based messages (`Messages.resx`)
+## 📅 Smart Booking System
+
+### ✔️ Rules
+- Booking based on **DateOnly (no time)**
+- Multiple patients allowed per doctor per day
+- Prevent duplicate booking:
+  - Same Patient + Same Doctor + Same Date ❌
+- Server-side validation:
+  - Doctor must match selected **Area & Specialty**
 
 ---
 
-## 📁 File Handling
-- Secure upload & storage under `wwwroot/uploads`
-- Prescription & Radiology file management
-- Controlled file access
+## 📄 Medical Records System
+- List Medical Records (Paging + Search)
+- Get by Id
+- Get by Appointment
+- Create Medical Record
+- Upload Prescription Image
+- Fully linked:
+  - Patient
+  - Doctor
+  - Appointment
 
 ---
 
-## 📊 Pagination & Filtering
-- Appointments
+## 🔍 Doctor Search (SSN-Based)
+
+### Returns:
+- Full Name
+- Age (calculated)
+- Height
+- Weight
+- Blood Type
+
+### Used in:
 - Medical Records
-- Prescriptions
-- Imaging
+- Surgeries
+
+---
+
+## 📊 Appointment Status Standardization
+
+All statuses are unified into:
+
+- `waiting`
+- `completed`
+- `cancelled`
+
+Handled via internal mapping method:
 
 ---
 
 ## 🏗 Architecture
-
-This project follows Clean Architecture:
-
-```text
 EHRS.sln
 │
 ├── EHRS.Api
-│   ├── Controllers
-│   ├── Services
-│   ├── Localization
-│   └── Resources
+│ ├── Controllers (Thin Controllers)
 │
 ├── EHRS.Core
-│   ├── DTOs
-│   ├── Requests
-│   ├── Interfaces
-│   └── Abstractions (Queries)
+│ ├── DTOs
+│ ├── Requests
+│ ├── Interfaces
+│ └── Abstractions (Queries)
 │
 └── EHRS.Infrastructure
-    ├── Persistence (DbContext + Entities)
-    ├── Queries (Implementations)
-    └── Services
-    
-    
-    
-Design Patterns Used
+├── Persistence (DbContext + Entities)
+├── Queries (Flat Structure)
 
-Clean Architecture
+---
 
-Queries Pattern
+## 📐 Design Patterns Used
 
-Dependency Injection
+- Clean Architecture
+- Queries Pattern
+- Dependency Injection
+- DTO Pattern
+- Separation of Concerns
+- Database First Approach
 
-JWT Authentication
+---
 
-Role-based Authorization
+## 🔑 Queries Pattern (Core Concept)
+Controller → IQueries → Infrastructure/Queries
 
-Resource-based Localization
+- Controllers contain no business logic
+- Logic implemented inside Queries layer
+- Interfaces defined in Core
+- Implementations in Infrastructure
 
-Pagination Pattern
+---
 
-🔑 Authentication Flow
+## 🧠 Key Architectural Decisions
 
-User registers (Patient or Doctor)
+- ✅ Flat Queries Structure (No Feature folders)
+- ✅ All Queries inside `Infrastructure/Queries`
+- ✅ DTOs used between layers only
+- ✅ DoctorId temporarily hardcoded (until JWT)
+- ✅ DateOnly used for booking system
 
-Doctor accounts require approval
+---
 
-On login, JWT token is generated
+## 🧾 Core Entities
 
-Role & UserId are extracted using ClaimsHelper
+### Patient
+- Personal & medical data
+- Height / Weight / BloodType / SSN
 
-Controllers authorize using [Authorize(Roles="...")]
+### Doctor
+- Profile & specialization
+- Certificates & license
+- ApprovalStatus
 
-🌍 Localization
+### Appointment
+- Date-based booking
+- Status + IsCancelled
 
-Language controlled by header:
+### MedicalRecord
+- Diagnosis / Notes / Treatment
+- Prescription Image
 
-Accept-Language: ar
-Accept-Language: en
+### SurgeryHistory
+- SurgeryType / Date / Notes
 
+### SensorData
+- HeartRate / SpO2 / Temperature / Activity
 
-Messages are stored in:
+---
 
-Resources/Messages.resx
-Resources/Messages.ar.resx
+## 📦 API Endpoints (Summary)
 
-🛠 Technologies Used
+### 👨‍⚕️ DoctorGET /api/Doctors
+POST /api/Doctors
+GET /api/Doctors/{id}
+PUT /api/Doctors/{id}
+DELETE /api/Doctors/{id}
+### 👤 Doctor Profile
+GET /api/DoctorProfile
+PUT /api/DoctorProfile
+### 📅 Booking
+GET /api/areas
+GET /api/specialties
+GET /api/doctors
+POST /api/booking
 
-ASP.NET Core (.NET 8)
+### 📄 Medical Records
+GET /api/MedicalRecords
+GET /api/MedicalRecords/{id}
+POST /api/MedicalRecords
 
-Entity Framework Core
+---
 
-SQL Server (Database First)
+## 🧪 Testing
 
-JWT Bearer Authentication
+- Swagger ✅
+- Postman ✅
 
-Resource-based Localization
+### Test Data
+- 15 Patients
+- 15 Doctors (Pending Approval)
 
-Swagger
+---
 
-▶️ How to Run
+## 🛠 Technologies Used
 
-Clone repository:
+- ASP.NET Core (.NET 8)
+- Entity Framework Core
+- SQL Server (Database First)
+- Swagger
+- Clean Architecture
 
-git clone https://github.com/MichaelMaged93/EHRS.git
+---
 
+## ▶️ How to Run
 
+### 1. Clone Repository
+```bash
+git clone https://github.com/your-username/EHRS.git
+2. Configure Database
 Update connection string in appsettings.json
-
-Ensure database exists
-
-Run project:
-
+Ensure SQL Server is running
+3. Run Project
 dotnet run
-
-
-Open Swagger:
-
+4. Open Swagger
 https://localhost:{port}/swagger
-
-📦 Example Endpoints
-Patient
-POST   /api/PatientAuth/register
-POST   /api/PatientAuth/login
-GET    /api/PatientDashboard
-POST   /api/PatientAppointments/{id}/cancel
-
-Doctor
-POST   /api/DoctorAuth/register
-POST   /api/DoctorAuth/login
-GET    /api/Dashboard/today
-POST   /api/MedicalRecords
-
 🔒 Security Notes
-
 Passwords stored as hashed values
-
-Role-based authorization enforced
-
-File paths validated
-
-Ownership checks applied on sensitive endpoints
-
+No password stored in Patient/Doctor tables
+Role separation enforced
+Booking validation applied server-side
+Ownership checks on sensitive endpoints
+📊 Current Project Status
+✅ Completed
+Full Backend Architecture
+Doctor Module
+Patient Module
+Booking System
+Medical Records
+Dashboard Logic
+Authentication Database Design
+🚧 Next Steps
+JWT Authentication
+Role-based Authorization Middleware
+Frontend Integration
+Wearable Device Integration
 📌 Future Improvements
-
-Global Exception Middleware
-
-Unified Error Response Model
-
+Global Exception Handling Middleware
+Unified Response Model
 FluentValidation Integration
-
-Logging Layer
-
+Logging System
 Unit & Integration Testing
-
 👨‍💻 Author
 
-Michael Maged
+Michael
 Backend Developer – ASP.NET Core
 Electrical Engineer (Communications & Electronics)
+
+📌 Final Note
+
+This project represents a real-world scalable healthcare backend system built with clean design, solid architecture, and production-ready practices.
