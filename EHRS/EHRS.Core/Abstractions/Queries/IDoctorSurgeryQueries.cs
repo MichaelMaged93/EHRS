@@ -6,6 +6,6 @@ namespace EHRS.Core.Abstractions.Queries
 {
     public interface IDoctorSurgeryQueries
     {
-        Task<List<DoctorAllSurgeriesDto>> GetSurgeriesByDoctorAsync(int doctorId);
+        Task<List<DoctorAllSurgeriesDto>> GetSurgeriesByDoctorAsync(int doctorId, string? search);
     }
 }

@@ -17,11 +17,19 @@ namespace EHRS.Infrastructure.Queries
             _db = db;
         }
 
-        public async Task<List<DoctorAllSurgeriesDto>> GetSurgeriesByDoctorAsync(int doctorId)
+        public async Task<List<DoctorAllSurgeriesDto>> GetSurgeriesByDoctorAsync(int doctorId, string? search)
         {
-            return await _db.SurgeryHistories
+            var query = _db.SurgeryHistories
                 .AsNoTracking()
                 .Where(s => s.DoctorId == doctorId)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(s => s.Patient.FullName.Contains(search));
+            }
+
+            return await query
                 .OrderByDescending(s => s.SurgeryDate)
                 .Select(s => new DoctorAllSurgeriesDto
                 {

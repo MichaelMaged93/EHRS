@@ -71,10 +71,10 @@ public sealed class DoctorSurgeriesController : ControllerBase
     }
 
     [HttpGet("all")]
-    public async Task<IActionResult> GetAllSurgeries()
+    public async Task<IActionResult> GetAllSurgeries([FromQuery] string? search)
     {
         var doctorId = ClaimsHelper.GetDoctorId(User);
-        var surgeries = await _doctorSurgeryQueries.GetSurgeriesByDoctorAsync(doctorId);
+        var surgeries = await _doctorSurgeryQueries.GetSurgeriesByDoctorAsync(doctorId, search);
         return Ok(surgeries);
     }
 }
