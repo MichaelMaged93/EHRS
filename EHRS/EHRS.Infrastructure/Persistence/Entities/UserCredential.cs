@@ -32,4 +32,8 @@ public partial class UserCredential
     [ForeignKey("PatientId")]
     [InverseProperty("UserCredential")]
     public virtual Patient? Patient { get; set; }
+    public string? ResetToken { get; set; }
+
+    public DateTime? ResetTokenExpiry { get; set; }
+
 }

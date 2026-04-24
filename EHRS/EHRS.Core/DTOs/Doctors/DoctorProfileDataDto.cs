@@ -18,4 +18,5 @@ public sealed class DoctorProfileDataDto
 
     public string? AffiliatedHospital { get; set; }
     public string? About { get; set; }
+    public string? area { get; set; }
 }

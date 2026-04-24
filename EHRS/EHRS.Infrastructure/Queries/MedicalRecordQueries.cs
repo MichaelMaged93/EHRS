@@ -37,7 +37,7 @@ namespace EHRS.Infrastructure.Queries
             if (!string.IsNullOrWhiteSpace(query.Search))
             {
                 var s = query.Search.Trim();
-                
+
                 /*q = q.Where(r =>
                     r.Patient.FullName.Contains(s) ||
                     (r.Diagnosis != null && r.Diagnosis.Contains(s)) ||

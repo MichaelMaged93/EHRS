@@ -256,8 +256,16 @@ public partial class EHRSContext : DbContext
             entity.Property(e => e.CreatedAt)
                 .HasPrecision(0)
                 .HasDefaultValueSql("(sysutcdatetime())");
+
             entity.Property(e => e.PasswordHash).HasMaxLength(500);
             entity.Property(e => e.Role).HasMaxLength(20);
+
+            // 🔐 Reset Password Fields
+            entity.Property(e => e.ResetToken)
+                .HasMaxLength(200);
+
+            entity.Property(e => e.ResetTokenExpiry)
+                .HasColumnType("datetime");
 
             entity.HasOne(d => d.Doctor).WithOne(p => p.UserCredential)
                 .HasForeignKey<UserCredential>(d => d.DoctorId)

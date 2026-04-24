@@ -32,7 +32,8 @@ public sealed class DoctorProfileQueries : IDoctorProfileQueries
                 ProfilePicture = d.ProfilePicture,
                 Certificates = d.Certificates,
                 AffiliatedHospital = d.AffiliatedHospital,
-                About = d.About
+                About = d.About,
+               area = d.Area
             })
             .FirstOrDefaultAsync(ct);
 

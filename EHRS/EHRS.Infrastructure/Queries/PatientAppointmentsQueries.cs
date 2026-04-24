@@ -25,18 +25,22 @@ public sealed class PatientAppointmentsQueries : IPatientAppointmentsQueries
         var pageSize = query.PageSize < 1 ? 10 : query.PageSize;
         if (pageSize > 50) pageSize = 50;
 
-        var now = DateTime.UtcNow;
+        var today = DateTime.Today;
 
         var baseQuery = _db.Appointments
             .AsNoTracking()
-            .Where(a => a.PatientId == patientId
-                        && !a.IsCancelled
-                        && a.AppointmentDateTime >= now);
+            .Where(a =>
+                a.PatientId == patientId
+                && !a.IsCancelled
+                && a.AppointmentDateTime.Date >= today);
 
         var totalCount = await baseQuery.CountAsync(ct);
 
         var items = await baseQuery
-            .OrderBy(a => a.AppointmentDateTime)
+            // 🔥 ORDERING FIX
+            // Waiting (0) فوق - Completed (1) تحت
+            .OrderBy(a => a.Status == 2 ? 1 : 0)
+            .ThenBy(a => a.AppointmentDateTime)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(a => new PatientAppointmentCardDto
@@ -79,16 +83,13 @@ public sealed class PatientAppointmentsQueries : IPatientAppointmentsQueries
         if (appt is null)
             return false;
 
-        // already cancelled
         if (appt.IsCancelled)
             return false;
 
-        // completed appointment cannot be cancelled
         if (appt.Status == 2)
             return false;
 
-        // past appointment cannot be cancelled
-        if (appt.AppointmentDateTime < DateTime.UtcNow)
+        if (appt.AppointmentDateTime.Date < DateTime.Today)
             return false;
 
         appt.IsCancelled = true;

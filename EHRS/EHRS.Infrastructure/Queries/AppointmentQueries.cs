@@ -17,58 +17,84 @@ public sealed class AppointmentQueries : IAppointmentQueries
         _db = db;
     }
 
+    // =========================
+    // UPCOMING (Doctor)
+    // =========================
     public async Task<PagedResult<AppointmentListItemDto>> GetDoctorUpcomingAppointmentsAsync(
         int doctorId,
         AppointmentQuery q,
         CancellationToken ct)
     {
-        var today = DateTime.UtcNow.Date;
+        var today = DateTime.Today;
 
         var baseQuery = _db.Appointments
             .AsNoTracking()
-            .Where(a => a.DoctorId == doctorId &&
-                        a.AppointmentDateTime.Date >= today);
+            .Where(a =>
+                a.DoctorId == doctorId &&
+                a.AppointmentDateTime.Date >= today);
 
         return await BuildResult(baseQuery, q, ct);
     }
 
+    // =========================
+    // PAST (Doctor)
+    // =========================
     public async Task<PagedResult<AppointmentListItemDto>> GetDoctorPastAppointmentsAsync(
         int doctorId,
         AppointmentQuery q,
         CancellationToken ct)
     {
-        var today = DateTime.UtcNow.Date;
+        var today = DateTime.Today;
 
         var baseQuery = _db.Appointments
             .AsNoTracking()
-            .Where(a => a.DoctorId == doctorId &&
-                        a.AppointmentDateTime.Date < today);
+            .Where(a =>
+                a.DoctorId == doctorId &&
+                a.AppointmentDateTime.Date < today);
 
         return await BuildResult(baseQuery, q, ct);
     }
 
+    // =========================
+    // CORE BUILDER
+    // =========================
     private async Task<PagedResult<AppointmentListItemDto>> BuildResult(
         IQueryable<Appointment> baseQuery,
         AppointmentQuery q,
         CancellationToken ct)
     {
-        // Status filter: waiting / completed / cancelled
+        // =========================
+        // STATUS FILTER (FIXED LOGIC)
+        // =========================
         if (!string.IsNullOrWhiteSpace(q.Status))
         {
             var st = q.Status.Trim().ToLowerInvariant();
 
             if (st == "cancelled")
+            {
                 baseQuery = baseQuery.Where(a => a.IsCancelled);
+            }
             else if (st == "waiting")
-                baseQuery = baseQuery.Where(a => a.Status == 0 && !a.IsCancelled);
+            {
+                baseQuery = baseQuery.Where(a =>
+                    !a.IsCancelled &&
+                    !(_db.MedicalRecords.Any(m => m.AppointmentId == a.AppointmentId)));
+            }
             else if (st == "completed")
-                baseQuery = baseQuery.Where(a => a.Status == 1 && !a.IsCancelled);
+            {
+                baseQuery = baseQuery.Where(a =>
+                    !a.IsCancelled &&
+                    _db.MedicalRecords.Any(m => m.AppointmentId == a.AppointmentId));
+            }
         }
 
-        // Search: AppointmentId OR Patient FullName
+        // =========================
+        // SEARCH
+        // =========================
         if (!string.IsNullOrWhiteSpace(q.Search))
         {
             var s = q.Search.Trim();
+
             baseQuery = baseQuery.Where(a =>
                 a.AppointmentId.ToString().Contains(s) ||
                 a.Patient.FullName.Contains(s));
@@ -87,10 +113,10 @@ public sealed class AppointmentQueries : IAppointmentQueries
             {
                 a.AppointmentId,
                 a.AppointmentDateTime,
-                a.Status,
                 a.IsCancelled,
                 a.ReasonForVisit,
-                PatientName = a.Patient.FullName
+                PatientName = a.Patient.FullName,
+                HasMedicalRecord = _db.MedicalRecords.Any(m => m.AppointmentId == a.AppointmentId)
             })
             .ToListAsync(ct);
 
@@ -100,7 +126,15 @@ public sealed class AppointmentQueries : IAppointmentQueries
             PatientName = r.PatientName,
             AppointmentDateTime = r.AppointmentDateTime,
             Type = r.ReasonForVisit ?? string.Empty,
-            Status = MapStatusToText(r.Status, r.IsCancelled)
+
+            // =========================
+            // UNIFIED STATUS (FIXED)
+            // =========================
+            Status = r.IsCancelled
+                ? "cancelled"
+                : r.HasMedicalRecord
+                    ? "completed"
+                    : "waiting"
         }).ToList();
 
         return new PagedResult<AppointmentListItemDto>
@@ -109,19 +143,6 @@ public sealed class AppointmentQueries : IAppointmentQueries
             PageSize = pageSize,
             TotalCount = totalCount,
             Items = items
-        };
-    }
-
-    private static string MapStatusToText(byte status, bool isCancelled)
-    {
-        if (isCancelled) return "cancelled";
-
-        return status switch
-        {
-            0 => "waiting",
-            1 => "waiting",
-            2 => "completed",
-            _ => "unknown"
         };
     }
 }

@@ -103,6 +103,7 @@ public sealed class DoctorProfileController : ControllerBase
             form.BirthDate,
             form.AffiliatedHospital,
             form.About,
+            form.area,
             profilePicturePath,
             certificatePdfPath,
             ct);

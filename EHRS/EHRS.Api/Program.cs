@@ -1,17 +1,22 @@
 ﻿using System.Globalization;
 using System.Text;
-using System.Threading.RateLimiting; // 👈 
+using System.Threading.RateLimiting;
+
 using EHRS.Api.Localization;
 using EHRS.Api.Services;
+
 using EHRS.Core.Abstractions.Queries;
 using EHRS.Core.Interfaces;
+using EHRS.Core.Settings;
+
 using EHRS.Infrastructure.Persistence;
 using EHRS.Infrastructure.Queries;
 using EHRS.Infrastructure.Queries.Patients;
 using EHRS.Infrastructure.Services;
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Localization;
-using Microsoft.AspNetCore.RateLimiting; // 👈 
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -25,23 +30,23 @@ namespace EHRS.Api
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Controllers
+            // ================= Controllers =================
             builder.Services.AddControllers();
 
-            // Localization (ar / en) - Resources folder
-            builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+            // ================= Localization =================
+            builder.Services.AddLocalization(o => o.ResourcesPath = "Resources");
 
             builder.Services.Configure<RequestLocalizationOptions>(options =>
             {
-                var supportedCultures = new[]
+                var cultures = new[]
                 {
                     new CultureInfo("en"),
                     new CultureInfo("ar")
                 };
 
                 options.DefaultRequestCulture = new RequestCulture("en");
-                options.SupportedCultures = supportedCultures;
-                options.SupportedUICultures = supportedCultures;
+                options.SupportedCultures = cultures;
+                options.SupportedUICultures = cultures;
 
                 options.RequestCultureProviders = new List<IRequestCultureProvider>
                 {
@@ -49,20 +54,25 @@ namespace EHRS.Api
                 };
             });
 
-            // Swagger + Bearer Auth
+            // ================= Swagger =================
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "EHRS API", Version = "v1" });
+                c.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "EHRS API",
+                    Version = "v1"
+                });
+
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     Name = "Authorization",
                     Type = SecuritySchemeType.Http,
                     Scheme = "bearer",
                     BearerFormat = "JWT",
-                    In = ParameterLocation.Header,
-                    Description = "Enter: Bearer {your JWT token}"
+                    In = ParameterLocation.Header
                 });
+
                 c.AddSecurityRequirement(new OpenApiSecurityRequirement
                 {
                     {
@@ -79,26 +89,29 @@ namespace EHRS.Api
                 });
             });
 
-            // DbContext
-            var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
-            if (string.IsNullOrWhiteSpace(connStr))
-                throw new InvalidOperationException("Connection string 'DefaultConnection' is missing.");
+            // ================= DbContext =================
+            var connStr = builder.Configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("Missing connection string");
 
             builder.Services.AddDbContext<EHRSContext>(options =>
                 options.UseSqlServer(connStr));
+
+            // ================= Core Services =================
             builder.Services.AddScoped<IEncryptionService, EncryptionService>();
+            builder.Services.AddScoped<IAppLocalizer, AppLocalizer>();
+            builder.Services.AddScoped<IEmailService, EmailService>();
 
-            // JWT Token Service (Api)
+            // ================= JWT =================
             builder.Services.AddSingleton<JwtTokenService>();
+            builder.Services.AddScoped<IAuthService, AuthService>();
 
+            var jwtKey = builder.Configuration["Jwt:Key"]
+                ?? throw new InvalidOperationException("Jwt Key missing");
 
-            // JWT Authentication
-            var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is missing.");
             var issuer = builder.Configuration["Jwt:Issuer"] ?? "EHRS";
             var audience = builder.Configuration["Jwt:Audience"] ?? "EHRS.Client";
 
-            builder.Services
-                .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
                     options.TokenValidationParameters = new TokenValidationParameters
@@ -109,112 +122,76 @@ namespace EHRS.Api
                         ValidateIssuerSigningKey = true,
                         ValidIssuer = issuer,
                         ValidAudience = audience,
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+                        IssuerSigningKey = new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(jwtKey))
                     };
                 });
 
             builder.Services.AddAuthorization();
-            // ⭐⭐⭐ Rate Limiting Configuration ⭐⭐⭐
+
+            // ================= Rate Limiting =================
             builder.Services.AddRateLimiter(options =>
             {
-                // سياسة خاصة بـ Login (5 محاولات في الدقيقة)
                 options.AddPolicy("LoginPolicy", context =>
                     RateLimitPartition.GetFixedWindowLimiter(
-                        partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                        factory: _ => new FixedWindowRateLimiterOptions
+                        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        _ => new FixedWindowRateLimiterOptions
                         {
-                            PermitLimit = 5,           // 5 محاولات بس
-                            Window = TimeSpan.FromMinutes(1), // في الدقيقة
-                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                            PermitLimit = 5,
+                            Window = TimeSpan.FromMinutes(1),
                             QueueLimit = 0
                         }));
 
-                // سياسة خاصة بـ Medical Records (20 طلب في الدقيقة)
-                options.AddPolicy("MedicalPolicy", context =>
-                    RateLimitPartition.GetFixedWindowLimiter(
-                        partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                        factory: _ => new FixedWindowRateLimiterOptions
+                options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+                {
+                    var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        ip,
+                        _ => new FixedWindowRateLimiterOptions
                         {
-                            PermitLimit = 20,          // 20 طلب
+                            PermitLimit = 100,
                             Window = TimeSpan.FromMinutes(1),
-                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                            QueueLimit = 2
-                        }));
+                            QueueLimit = 5
+                        });
+                });
 
-                // سياسة عامة لكل الـ APIs (100 طلب في الدقيقة)
-                options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(
-                    httpContext =>
-                    {
-                        var userIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-                        return RateLimitPartition.GetFixedWindowLimiter(
-                            partitionKey: userIp,
-                            factory: _ => new FixedWindowRateLimiterOptions
-                            {
-                                PermitLimit = 100,
-                                Window = TimeSpan.FromMinutes(1),
-                                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                                QueueLimit = 5
-                            });
-                    });
-
-                // رد لما يتجاوز الحد
                 options.OnRejected = async (context, token) =>
                 {
-                    context.HttpContext.Response.StatusCode = 429; // Too Many Requests
-                    context.HttpContext.Response.ContentType = "application/json";
-
-                    var response = new
+                    context.HttpContext.Response.StatusCode = 429;
+                    await context.HttpContext.Response.WriteAsJsonAsync(new
                     {
-                        error = "Too many requests",
-                        message = "You have exceeded the rate limit. Please try again later.",
-                        retryAfter = 60
-                    };
-
-                    await context.HttpContext.Response.WriteAsJsonAsync(response, token);
+                        error = "Too many requests"
+                    }, token);
                 };
             });
 
-            // Helper: App Localizer
-            builder.Services.AddScoped<IAppLocalizer, AppLocalizer>();
-
-            // Services
+            // ================= Services =================
             builder.Services.AddScoped<IDoctorService, DoctorService>();
             builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
             builder.Services.AddScoped<IDoctorProfileService, DoctorProfileService>();
 
-            // Queries
+            // ================= Queries =================
             builder.Services.AddScoped<IAppointmentQueries, AppointmentQueries>();
-            builder.Services.AddScoped<IDashboardQueries, DashboardQueries>();
             builder.Services.AddScoped<IMedicalRecordQueries, MedicalRecordQueries>();
+            builder.Services.AddScoped<IDashboardQueries, DashboardQueries>();
             builder.Services.AddScoped<IDoctorProfileQueries, DoctorProfileQueries>();
+
             builder.Services.AddScoped<IPatientProfileQueries, PatientProfileQueries>();
+            builder.Services.AddScoped<IPatientDashboardQueries, PatientDashboardQueries>();
+            builder.Services.AddScoped<IPatientAppointmentsQueries, PatientAppointmentsQueries>();
+            builder.Services.AddScoped<IPatientBookingQueries, PatientBookingQueries>();
             builder.Services.AddScoped<IPatientPrescriptionsQueries, PatientPrescriptionsQueries>();
-
-            // Doctor Patients Queries
-            builder.Services.AddScoped<IDoctorPatientQueries, DoctorPatientQueries>();
-
-            // Patient Medical History (Diseases / Allergies)
+            builder.Services.AddScoped<IPatientImagingQueries, PatientImagingQueries>();
             builder.Services.AddScoped<IPatientMedicalHistoryQueries, PatientMedicalHistoryQueries>();
 
-            // Patient Dashboard
-            builder.Services.AddScoped<IPatientDashboardQueries, PatientDashboardQueries>();
+            builder.Services.AddScoped<IDoctorPatientQueries, DoctorPatientQueries>();
+            builder.Services.AddScoped<IDoctorSurgeryQueries, DoctorSurgeryQueries>();
 
-            // Patient Appointments
-            builder.Services.AddScoped<IPatientAppointmentsQueries, PatientAppointmentsQueries>();
-
-            // Patient Booking
-            builder.Services.AddScoped<IPatientBookingQueries, PatientBookingQueries>();
-
-            // Patient Imaging & Radiology
-            builder.Services.AddScoped<IPatientImagingQueries, PatientImagingQueries>();
-
-            // Auth Queries (Patient/Doctor)
             builder.Services.AddScoped<IPatientAuthQueries, PatientAuthQueries>();
             builder.Services.AddScoped<IDoctorAuthQueries, DoctorAuthQueries>();
 
-            // ** Doctor Surgeries Queries (NEW) **
-            builder.Services.AddScoped<IDoctorSurgeryQueries, DoctorSurgeryQueries>();
-
+            // ================= Build App =================
             var app = builder.Build();
 
             if (app.Environment.IsDevelopment())
@@ -224,19 +201,22 @@ namespace EHRS.Api
             }
 
             app.UseHttpsRedirection();
-            app.UseStaticFiles();
 
-            // Apply Localization
+            // ================= STATIC FILES (FINAL FIX) =================
+            app.UseStaticFiles(); // wwwroot فقط (ده الصح)
+
+            // ================= Localization =================
             var locOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>();
             app.UseRequestLocalization(locOptions.Value);
 
+            // ================= Middleware =================
             app.UseAuthentication();
             app.UseAuthorization();
 
-            // ⭐ استخدام Rate Limiting ⭐
             app.UseRateLimiter();
 
             app.MapControllers();
+
             app.Run();
         }
     }

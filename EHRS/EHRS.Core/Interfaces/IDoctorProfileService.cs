@@ -13,6 +13,7 @@ public interface IDoctorProfileService
         DateOnly? birthDate,
         string? affiliatedHospital,
         string? about,
+         string? area,
         string? profilePicturePath,
         string? certificatePath,
         CancellationToken ct);

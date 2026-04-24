@@ -12,7 +12,7 @@ public sealed class UpdateDoctorProfileForm
     public string? ContactNumber { get; set; }
     public string? Gender { get; set; }
     public DateOnly? BirthDate { get; set; }
-
+    public string? area { get; set; }
     public string? AffiliatedHospital { get; set; }
     public string? About { get; set; }
 

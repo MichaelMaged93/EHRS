@@ -96,8 +96,8 @@ public sealed class PatientDashboardQueries : IPatientDashboardQueries
 
         return status switch
         {
-            0 => "waiting",
-            1 => "completed",
+            1 => "waiting",
+            2 => "completed",
             _ => "unknown"
         };
     }

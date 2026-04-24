@@ -24,6 +24,7 @@ public sealed class DoctorProfileService : IDoctorProfileService
         DateOnly? birthDate,
         string? affiliatedHospital,
         string? about,
+            string? area,
         string? profilePicturePath,
         string? certificatePath,
         CancellationToken ct)
@@ -49,6 +50,8 @@ public sealed class DoctorProfileService : IDoctorProfileService
         if (!string.IsNullOrWhiteSpace(gender))
             doctor.Gender = gender;
 
+        if (!string.IsNullOrWhiteSpace(area))   
+            doctor.Area = area;
         if (birthDate.HasValue)
             doctor.BirthDate = birthDate;
 
