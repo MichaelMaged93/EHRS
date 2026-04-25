@@ -46,7 +46,6 @@ public sealed class PatientPrescriptionsQueries : IPatientPrescriptionsQueries
         }
         else
         {
-            // invalid tab -> return empty list (Controller already returns 400)
             return new PatientPrescriptionsPagedResultDto
             {
                 PageNumber = pageNumber,
@@ -66,18 +65,25 @@ public sealed class PatientPrescriptionsQueries : IPatientPrescriptionsQueries
             {
                 RecordId = m.RecordId,
 
-                // Doctor info (null-safe)
                 DoctorName = m.Doctor != null ? m.Doctor.FullName : "Unknown Doctor",
                 DoctorSpecialization = m.Doctor != null ? m.Doctor.Specialization : null,
 
+                // ✅ FIXED: prevents double /uploads issue
+                DoctorImageUrl =
+                    m.Doctor != null && !string.IsNullOrEmpty(m.Doctor.ProfilePicture)
+                    ? (m.Doctor.ProfilePicture.StartsWith("/uploads")
+                        ? m.Doctor.ProfilePicture
+                        : $"/uploads/doctors/{m.Doctor.ProfilePicture}")
+                    : null,
+
                 PrescriptionDate = m.RecordDateTime,
 
-                //  Medical Record details (NEW)
                 ChiefComplaint = m.ChiefComplaint,
                 Diagnosis = m.Diagnosis,
                 Treatment = m.Treatment,
 
                 PrescriptionPath = m.PrescriptionImagePath!,
+
                 DownloadUrl = $"/api/PatientPrescriptions/{m.RecordId}/download"
             })
             .ToListAsync();

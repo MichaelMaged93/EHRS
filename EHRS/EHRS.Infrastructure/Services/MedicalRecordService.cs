@@ -1,4 +1,5 @@
 ﻿using EHRS.Core.DTOs.MedicalRecords;
+using EHRS.Core.DTOs.Patients;
 using EHRS.Core.Interfaces;
 using EHRS.Core.Requests.MedicalRecords;
 using EHRS.Infrastructure.Persistence;
@@ -16,6 +17,9 @@ namespace EHRS.Infrastructure.Services
             _db = db;
         }
 
+        // =========================
+        // CREATE MEDICAL RECORD
+        // =========================
         public async Task<MedicalRecordDetailsDto> CreateAsync(
             int doctorId,
             CreateMedicalRecordRequest request,
@@ -61,23 +65,49 @@ namespace EHRS.Infrastructure.Services
 
             await _db.SaveChangesAsync(ct);
 
-            return new MedicalRecordDetailsDto
-            {
-                RecordId = entity.RecordId,
-                PatientId = entity.PatientId,
-                DoctorId = entity.DoctorId,
-                AppointmentId = entity.AppointmentId,
-                RecordDateTime = entity.RecordDateTime,
-                ChiefComplaint = entity.ChiefComplaint,
-                Diagnosis = entity.Diagnosis,
-                ClinicalNotes = entity.ClinicalNotes,
-                Treatment = entity.Treatment,
-                Radiology = entity.Radiology
-            };
+            return await _db.MedicalRecords
+                .Where(r => r.RecordId == entity.RecordId)
+                .Select(r => new MedicalRecordDetailsDto
+                {
+                    RecordId = r.RecordId,
+                    DoctorId = r.DoctorId,
+                    AppointmentId = r.AppointmentId,
+                    RecordDateTime = r.RecordDateTime,
+
+                    ChiefComplaint = r.ChiefComplaint,
+                    Diagnosis = r.Diagnosis,
+                    ClinicalNotes = r.ClinicalNotes,
+                    Treatment = r.Treatment,
+                    Radiology = r.Radiology,
+                    PrescriptionImagePath = r.PrescriptionImagePath,
+
+                    Patient = r.Patient == null ? null : new PatientMedicalViewDto
+                    {
+                        PatientId = r.Patient.PatientId,
+                        FullName = r.Patient.FullName,
+                        Gender = r.Patient.Gender,
+
+                        BirthDate = (r.Patient.BirthDate.HasValue && r.Patient.BirthDate.Value.Year > 1900)
+                            ? r.Patient.BirthDate
+                            : null,
+
+                        Age = (r.Patient.BirthDate.HasValue && r.Patient.BirthDate.Value.Year > 1900)
+                            ? DateTime.UtcNow.Year - r.Patient.BirthDate.Value.Year
+                            : null,
+
+                        BloodType = r.Patient.BloodType,
+                        HeightCm = r.Patient.HeightCm,
+                        WeightKg = r.Patient.WeightKg,
+
+                        Address = r.Patient.Address,
+                        ProfilePicture = r.Patient.ProfilePicture
+                    }
+                })
+                .FirstOrDefaultAsync(ct);
         }
 
         // =========================
-        // Upload Prescription (FINAL FIX)
+        // UPLOAD PRESCRIPTION
         // =========================
         public async Task UploadPrescriptionAsync(
             int recordId,
@@ -106,7 +136,7 @@ namespace EHRS.Infrastructure.Services
         }
 
         // =========================
-        // Upload Radiology (FINAL FIX)
+        // UPLOAD RADIOLOGY
         // =========================
         public async Task UploadRadiologyAsync(
             int recordId,

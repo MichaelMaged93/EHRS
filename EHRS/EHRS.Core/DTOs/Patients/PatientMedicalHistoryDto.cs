@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace EHRS.Core.DTOs.Patients
+﻿namespace EHRS.Core.DTOs.Patients
 {
     public sealed class PatientMedicalHistoryDto
     {

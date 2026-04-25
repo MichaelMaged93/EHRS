@@ -32,6 +32,7 @@ namespace EHRS.Infrastructure.Queries
                     p.HeightCm,
                     p.WeightKg,
                     p.BirthDate,
+
                     MedicalRecords = p.MedicalRecords
                         .OrderByDescending(r => r.RecordDateTime)
                         .Select(r => new DoctorPatientDtos.MedicalRecordForDoctorDto
@@ -87,9 +88,17 @@ namespace EHRS.Infrastructure.Queries
                             SurgeryId = s.SurgeryId,
                             SurgeryType = s.SurgeryType,
                             SurgeryDate = s.SurgeryDate.ToDateTime(TimeOnly.MinValue),
+
                             DoctorId = s.DoctorId,
+
+                            // ✅ FIXED HERE
+                            DoctorName = s.Doctor.FullName,
+                            DoctorSpecialization = s.Doctor.Specialization,
+                            DoctorImageUrl = s.Doctor.ProfilePicture,
+
                             Notes = s.Notes
-                        }).ToList()
+                        })
+                        .ToList()
                 })
                 .FirstOrDefaultAsync();
 
@@ -125,7 +134,8 @@ namespace EHRS.Infrastructure.Queries
 
         private static List<string> SplitCsv(string? value)
         {
-            if (string.IsNullOrWhiteSpace(value)) return new List<string>();
+            if (string.IsNullOrWhiteSpace(value))
+                return new List<string>();
 
             return value
                 .Split(',', StringSplitOptions.RemoveEmptyEntries)

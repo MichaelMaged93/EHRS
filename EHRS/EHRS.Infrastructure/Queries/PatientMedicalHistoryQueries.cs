@@ -44,8 +44,18 @@ public sealed class PatientMedicalHistoryQueries : IPatientMedicalHistoryQueries
                 SurgeryId = s.SurgeryId,
                 SurgeryType = s.SurgeryType,
                 SurgeryDate = s.SurgeryDate,
-                DoctorId = (int)s.DoctorId, 
-                Notes = s.Notes
+                DoctorId = (int)s.DoctorId,
+                Notes = s.Notes,
+
+                Doctor = s.Doctor == null
+                    ? null!
+                    : new DoctorBasicInfoDto
+                    {
+                        DoctorId = s.Doctor.DoctorId,
+                        Name = s.Doctor.FullName,
+                        Specialty = s.Doctor.Specialization ?? string.Empty,
+                        ImageUrl = s.Doctor.ProfilePicture
+                    }
             })
             .ToListAsync();
     }
@@ -80,7 +90,10 @@ public sealed class PatientMedicalHistoryQueries : IPatientMedicalHistoryQueries
     public async Task<bool> UpdateSurgeryAsync(int patientId, int doctorId, int surgeryId, UpdateSurgeryRequest request)
     {
         var entity = await _db.SurgeryHistories
-            .FirstOrDefaultAsync(s => s.SurgeryId == surgeryId && s.PatientId == patientId && s.DoctorId == doctorId);
+            .FirstOrDefaultAsync(s =>
+                s.SurgeryId == surgeryId &&
+                s.PatientId == patientId &&
+                s.DoctorId == doctorId);
 
         if (entity is null) return false;
 
@@ -111,7 +124,10 @@ public sealed class PatientMedicalHistoryQueries : IPatientMedicalHistoryQueries
     public async Task<bool> DeleteSurgeryAsync(int patientId, int doctorId, int surgeryId)
     {
         var entity = await _db.SurgeryHistories
-            .FirstOrDefaultAsync(s => s.SurgeryId == surgeryId && s.PatientId == patientId && s.DoctorId == doctorId);
+            .FirstOrDefaultAsync(s =>
+                s.SurgeryId == surgeryId &&
+                s.PatientId == patientId &&
+                s.DoctorId == doctorId);
 
         if (entity is null) return false;
 
@@ -134,6 +150,8 @@ public sealed class PatientMedicalHistoryQueries : IPatientMedicalHistoryQueries
         await _db.SaveChangesAsync();
         return true;
     }
+
+    #region Helpers
 
     private static List<string> NormalizeList(IEnumerable<string> items)
     {
@@ -160,4 +178,6 @@ public sealed class PatientMedicalHistoryQueries : IPatientMedicalHistoryQueries
 
     private static string? JoinCsv(List<string> items)
         => items.Count == 0 ? null : string.Join(", ", items);
+
+    #endregion
 }

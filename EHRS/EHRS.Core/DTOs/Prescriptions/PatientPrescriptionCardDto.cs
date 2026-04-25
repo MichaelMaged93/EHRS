@@ -8,6 +8,8 @@ public sealed class PatientPrescriptionCardDto
 
     public string? DoctorSpecialization { get; set; }
 
+    public string? DoctorImageUrl { get; set; }   // 👈 الجديد
+
     public DateTime PrescriptionDate { get; set; }
 
     public string? ChiefComplaint { get; set; }
