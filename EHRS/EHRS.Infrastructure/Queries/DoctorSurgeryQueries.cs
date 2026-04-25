@@ -21,9 +21,9 @@ namespace EHRS.Infrastructure.Queries
         {
             var query = _db.SurgeryHistories
                 .AsNoTracking()
-                .Where(s => s.DoctorId == doctorId)
-                .AsQueryable();
+                .Where(s => s.DoctorId == doctorId);
 
+            // 🔍 Search by patient name
             if (!string.IsNullOrWhiteSpace(search))
             {
                 query = query.Where(s => s.Patient.FullName.Contains(search));
@@ -36,6 +36,12 @@ namespace EHRS.Infrastructure.Queries
                     SurgeryId = s.SurgeryId,
                     PatientId = s.PatientId,
                     PatientName = s.Patient.FullName,
+
+                    // ✅ Patient Image
+                    PatientImageUrl = string.IsNullOrEmpty(s.Patient.ProfilePicture)
+                        ? null
+                        : "/uploads/patients/" + s.Patient.ProfilePicture,
+
                     SurgeryType = s.SurgeryType,
                     SurgeryDate = s.SurgeryDate.ToDateTime(TimeOnly.MinValue),
                     Notes = s.Notes
