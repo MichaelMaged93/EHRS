@@ -33,10 +33,9 @@ public class EmailService : IEmailService
 
         try
         {
-            // 🔥 FIX: Gmail stable connection
             await smtp.ConnectAsync(
                 _settings.SmtpServer,
-                587,
+                _settings.SmtpPort,
                 SecureSocketOptions.StartTls
             );
 

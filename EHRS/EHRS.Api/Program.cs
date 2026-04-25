@@ -34,19 +34,19 @@ namespace EHRS.Api
             builder.Services.AddControllers();
 
             // ================= Localization =================
-            builder.Services.AddLocalization(o => o.ResourcesPath = "Resources");
+            builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 
             builder.Services.Configure<RequestLocalizationOptions>(options =>
             {
-                var cultures = new[]
+                var supportedCultures = new[]
                 {
                     new CultureInfo("en"),
                     new CultureInfo("ar")
                 };
 
                 options.DefaultRequestCulture = new RequestCulture("en");
-                options.SupportedCultures = cultures;
-                options.SupportedUICultures = cultures;
+                options.SupportedCultures = supportedCultures;
+                options.SupportedUICultures = supportedCultures;
 
                 options.RequestCultureProviders = new List<IRequestCultureProvider>
                 {
@@ -91,14 +91,18 @@ namespace EHRS.Api
 
             // ================= DbContext =================
             var connStr = builder.Configuration.GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException("Missing connection string");
+                ?? throw new InvalidOperationException("Connection string missing");
 
             builder.Services.AddDbContext<EHRSContext>(options =>
                 options.UseSqlServer(connStr));
 
             // ================= Core Services =================
             builder.Services.AddScoped<IEncryptionService, EncryptionService>();
-            builder.Services.AddScoped<IAppLocalizer, AppLocalizer>();
+
+            // ================= Email =================
+            builder.Services.Configure<EmailSettings>(
+                builder.Configuration.GetSection("EmailSettings"));
+
             builder.Services.AddScoped<IEmailService, EmailService>();
 
             // ================= JWT =================
@@ -129,19 +133,12 @@ namespace EHRS.Api
 
             builder.Services.AddAuthorization();
 
+            // ================= Localizer =================
+            builder.Services.AddScoped<IAppLocalizer, AppLocalizer>();
+
             // ================= Rate Limiting =================
             builder.Services.AddRateLimiter(options =>
             {
-                options.AddPolicy("LoginPolicy", context =>
-                    RateLimitPartition.GetFixedWindowLimiter(
-                        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                        _ => new FixedWindowRateLimiterOptions
-                        {
-                            PermitLimit = 5,
-                            Window = TimeSpan.FromMinutes(1),
-                            QueueLimit = 0
-                        }));
-
                 options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
                 {
                     var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
@@ -156,12 +153,23 @@ namespace EHRS.Api
                         });
                 });
 
+                options.AddPolicy("LoginPolicy", context =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 5,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueLimit = 0
+                        }));
+
                 options.OnRejected = async (context, token) =>
                 {
                     context.HttpContext.Response.StatusCode = 429;
+
                     await context.HttpContext.Response.WriteAsJsonAsync(new
                     {
-                        error = "Too many requests"
+                        message = "Too many requests. Try again later."
                     }, token);
                 };
             });
@@ -174,46 +182,46 @@ namespace EHRS.Api
             // ================= Queries =================
             builder.Services.AddScoped<IAppointmentQueries, AppointmentQueries>();
             builder.Services.AddScoped<IMedicalRecordQueries, MedicalRecordQueries>();
-            builder.Services.AddScoped<IDashboardQueries, DashboardQueries>();
-            builder.Services.AddScoped<IDoctorProfileQueries, DoctorProfileQueries>();
-
             builder.Services.AddScoped<IPatientProfileQueries, PatientProfileQueries>();
+
+            builder.Services.AddScoped<IPatientAuthQueries, PatientAuthQueries>();
+            builder.Services.AddScoped<IDoctorAuthQueries, DoctorAuthQueries>();
             builder.Services.AddScoped<IPatientDashboardQueries, PatientDashboardQueries>();
             builder.Services.AddScoped<IPatientAppointmentsQueries, PatientAppointmentsQueries>();
             builder.Services.AddScoped<IPatientBookingQueries, PatientBookingQueries>();
             builder.Services.AddScoped<IPatientPrescriptionsQueries, PatientPrescriptionsQueries>();
-            builder.Services.AddScoped<IPatientImagingQueries, PatientImagingQueries>();
             builder.Services.AddScoped<IPatientMedicalHistoryQueries, PatientMedicalHistoryQueries>();
+            builder.Services.AddScoped<IPatientImagingQueries, PatientImagingQueries>();
 
+            // ======= FIXED MISSING QUERIES (CAUSE OF ALL ERRORS) =======
+            builder.Services.AddScoped<IDoctorProfileQueries, DoctorProfileQueries>();
+            builder.Services.AddScoped<IDashboardQueries, DashboardQueries>();
             builder.Services.AddScoped<IDoctorPatientQueries, DoctorPatientQueries>();
             builder.Services.AddScoped<IDoctorSurgeryQueries, DoctorSurgeryQueries>();
-
-            builder.Services.AddScoped<IPatientAuthQueries, PatientAuthQueries>();
-            builder.Services.AddScoped<IDoctorAuthQueries, DoctorAuthQueries>();
 
             // ================= Build App =================
             var app = builder.Build();
 
+            // ================= Middleware =================
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
 
+            var localizationOptions = app.Services
+                .GetRequiredService<IOptions<RequestLocalizationOptions>>().Value;
+
             app.UseHttpsRedirection();
 
-            // ================= STATIC FILES (FINAL FIX) =================
-            app.UseStaticFiles(); // wwwroot فقط (ده الصح)
+            app.UseRequestLocalization(localizationOptions);
 
-            // ================= Localization =================
-            var locOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>();
-            app.UseRequestLocalization(locOptions.Value);
+            app.UseRateLimiter();
 
-            // ================= Middleware =================
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.UseRateLimiter();
+            app.UseStaticFiles();
 
             app.MapControllers();
 
