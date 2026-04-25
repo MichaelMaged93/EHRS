@@ -30,12 +30,10 @@ public class AuthService : IAuthService
                 (x.Doctor != null && x.Doctor.Email == email));
 
         if (user == null)
-            return true;
+            return false; // ✅ FIX
 
-        // ✅ Generate 6-digit OTP
         var otp = RandomNumberGenerator.GetInt32(100000, 999999).ToString();
 
-        // ✅ Hash OTP before saving
         user.ResetToken = BCrypt.Net.BCrypt.HashPassword(otp);
         user.ResetTokenExpiry = DateTime.UtcNow.AddMinutes(10);
 
@@ -65,13 +63,9 @@ public class AuthService : IAuthService
                 (x.Patient != null && x.Patient.Email == email) ||
                 (x.Doctor != null && x.Doctor.Email == email));
 
-        if (user == null)
+        if (user == null || string.IsNullOrEmpty(user.ResetToken))
             return false;
 
-        if (string.IsNullOrEmpty(user.ResetToken))
-            return false;
-
-        // ✅ Verify hashed OTP
         if (!BCrypt.Net.BCrypt.Verify(token, user.ResetToken))
             return false;
 
@@ -91,10 +85,9 @@ public class AuthService : IAuthService
                 (x.Patient != null && x.Patient.Email == email) ||
                 (x.Doctor != null && x.Doctor.Email == email));
 
-        if (user == null)
+        if (user == null || string.IsNullOrEmpty(user.ResetToken))
             return false;
 
-        // ✅ Verify OTP again
         if (!BCrypt.Net.BCrypt.Verify(token, user.ResetToken))
             return false;
 
@@ -103,7 +96,6 @@ public class AuthService : IAuthService
 
         user.PasswordHash = _passwordHasher.HashPassword(user, newPassword);
 
-        // clear
         user.ResetToken = null;
         user.ResetTokenExpiry = null;
 
