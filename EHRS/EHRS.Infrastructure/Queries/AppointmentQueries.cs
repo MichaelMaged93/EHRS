@@ -91,7 +91,7 @@ public sealed class AppointmentQueries : IAppointmentQueries
                 baseQuery = baseQuery.Where(a =>
                     !a.IsCancelled &&
                     !(_db.MedicalRecords.Any(m => m.AppointmentId == a.AppointmentId)) &&
-                    a.AppointmentDateTime < DateTime.Now);
+                    a.AppointmentDateTime.Date < DateTime.Today); // ✅ FIXED
             }
         }
 
@@ -136,14 +136,11 @@ public sealed class AppointmentQueries : IAppointmentQueries
             AppointmentDateTime = r.AppointmentDateTime,
             Type = r.ReasonForVisit ?? string.Empty,
 
-            // =========================
-            // FINAL STATUS LOGIC
-            // =========================
             Status = r.IsCancelled
                 ? "cancelled"
                 : r.HasMedicalRecord
                     ? "completed"
-                    : r.AppointmentDateTime < DateTime.Now
+                    : r.AppointmentDateTime.Date < DateTime.Today
                         ? "missed"
                         : "waiting"
         }).ToList();
