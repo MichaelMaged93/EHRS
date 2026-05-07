@@ -54,7 +54,10 @@ public sealed class PatientBookingQueries : IPatientBookingQueries
                 DoctorId = d.DoctorId,
                 FullName = d.FullName,
                 Specialization = d.Specialization,
-                Area = d.Area
+                Area = d.Area,
+
+                // NEW
+                ProfilePicture = d.ProfilePicture
             })
             .ToListAsync(ct);
     }
@@ -67,7 +70,6 @@ public sealed class PatientBookingQueries : IPatientBookingQueries
         if (request.DoctorId <= 0)
             throw new ArgumentException("DoctorId is required.");
 
-        // ✅ FIXED
         if (request.AppointmentDate < DateOnly.FromDateTime(DateTime.Today))
             throw new ArgumentException("AppointmentDate must be today or in the future.");
 

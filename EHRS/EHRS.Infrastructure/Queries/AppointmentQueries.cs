@@ -64,7 +64,7 @@ public sealed class AppointmentQueries : IAppointmentQueries
         CancellationToken ct)
     {
         // =========================
-        // STATUS FILTER (FIXED LOGIC)
+        // STATUS FILTER
         // =========================
         if (!string.IsNullOrWhiteSpace(q.Status))
         {
@@ -85,6 +85,13 @@ public sealed class AppointmentQueries : IAppointmentQueries
                 baseQuery = baseQuery.Where(a =>
                     !a.IsCancelled &&
                     _db.MedicalRecords.Any(m => m.AppointmentId == a.AppointmentId));
+            }
+            else if (st == "missed")
+            {
+                baseQuery = baseQuery.Where(a =>
+                    !a.IsCancelled &&
+                    !(_db.MedicalRecords.Any(m => m.AppointmentId == a.AppointmentId)) &&
+                    a.AppointmentDateTime < DateTime.Now);
             }
         }
 
@@ -112,6 +119,7 @@ public sealed class AppointmentQueries : IAppointmentQueries
             .Select(a => new
             {
                 a.AppointmentId,
+                a.PatientId,
                 a.AppointmentDateTime,
                 a.IsCancelled,
                 a.ReasonForVisit,
@@ -123,18 +131,21 @@ public sealed class AppointmentQueries : IAppointmentQueries
         var items = rows.Select(r => new AppointmentListItemDto
         {
             AppointmentId = r.AppointmentId,
+            PatientId = r.PatientId,
             PatientName = r.PatientName,
             AppointmentDateTime = r.AppointmentDateTime,
             Type = r.ReasonForVisit ?? string.Empty,
 
             // =========================
-            // UNIFIED STATUS (FIXED)
+            // FINAL STATUS LOGIC
             // =========================
             Status = r.IsCancelled
                 ? "cancelled"
                 : r.HasMedicalRecord
                     ? "completed"
-                    : "waiting"
+                    : r.AppointmentDateTime < DateTime.Now
+                        ? "missed"
+                        : "waiting"
         }).ToList();
 
         return new PagedResult<AppointmentListItemDto>

@@ -66,6 +66,7 @@ namespace EHRS.Infrastructure.Queries
                 {
                     RecordId = r.RecordId,
                     DoctorId = r.DoctorId,
+                    DoctorName = r.Doctor.FullName,
                     AppointmentId = r.AppointmentId,
                     RecordDateTime = r.RecordDateTime,
 
@@ -111,6 +112,7 @@ namespace EHRS.Infrastructure.Queries
                 {
                     RecordId = r.RecordId,
                     DoctorId = r.DoctorId,
+                    DoctorName = r.Doctor.FullName,
                     AppointmentId = r.AppointmentId,
                     RecordDateTime = r.RecordDateTime,
 
@@ -160,6 +162,7 @@ namespace EHRS.Infrastructure.Queries
                 {
                     RecordId = r.RecordId,
                     DoctorId = r.DoctorId,
+                    DoctorName = r.Doctor.FullName,
                     AppointmentId = r.AppointmentId,
                     RecordDateTime = r.RecordDateTime,
 
