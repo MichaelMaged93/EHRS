@@ -1,6 +1,5 @@
 ﻿using EHRS.Core.Abstractions.Queries;
 using EHRS.Core.Common;
-using EHRS.Core.Dtos.Appointments;
 using EHRS.Core.Requests.Appointments;
 using EHRS.Infrastructure.Persistence;
 using EHRS.Infrastructure.Persistence.Entities;
@@ -18,7 +17,7 @@ public sealed class AppointmentQueries : IAppointmentQueries
     }
 
     // =========================
-    // UPCOMING (Doctor)
+    // UPCOMING
     // =========================
     public async Task<PagedResult<AppointmentListItemDto>> GetDoctorUpcomingAppointmentsAsync(
         int doctorId,
@@ -37,7 +36,7 @@ public sealed class AppointmentQueries : IAppointmentQueries
     }
 
     // =========================
-    // PAST (Doctor)
+    // PAST
     // =========================
     public async Task<PagedResult<AppointmentListItemDto>> GetDoctorPastAppointmentsAsync(
         int doctorId,
@@ -78,7 +77,7 @@ public sealed class AppointmentQueries : IAppointmentQueries
             {
                 baseQuery = baseQuery.Where(a =>
                     !a.IsCancelled &&
-                    !(_db.MedicalRecords.Any(m => m.AppointmentId == a.AppointmentId)));
+                    !_db.MedicalRecords.Any(m => m.AppointmentId == a.AppointmentId));
             }
             else if (st == "completed")
             {
@@ -90,8 +89,8 @@ public sealed class AppointmentQueries : IAppointmentQueries
             {
                 baseQuery = baseQuery.Where(a =>
                     !a.IsCancelled &&
-                    !(_db.MedicalRecords.Any(m => m.AppointmentId == a.AppointmentId)) &&
-                    a.AppointmentDateTime.Date < DateTime.Today); // ✅ FIXED
+                    !_db.MedicalRecords.Any(m => m.AppointmentId == a.AppointmentId) &&
+                    a.AppointmentDateTime.Date < DateTime.Today);
             }
         }
 
@@ -112,6 +111,9 @@ public sealed class AppointmentQueries : IAppointmentQueries
         var page = q.Page <= 0 ? 1 : q.Page;
         var pageSize = (q.PageSize <= 0 || q.PageSize > 100) ? 20 : q.PageSize;
 
+        // =========================
+        // QUERY
+        // =========================
         var rows = await baseQuery
             .OrderByDescending(a => a.AppointmentDateTime)
             .Skip((page - 1) * pageSize)
@@ -123,16 +125,48 @@ public sealed class AppointmentQueries : IAppointmentQueries
                 a.AppointmentDateTime,
                 a.IsCancelled,
                 a.ReasonForVisit,
+
                 PatientName = a.Patient.FullName,
-                HasMedicalRecord = _db.MedicalRecords.Any(m => m.AppointmentId == a.AppointmentId)
+
+                Patient = new
+                {
+                    a.Patient.PatientId,
+                    a.Patient.FullName,
+                    a.Patient.Gender,
+                    a.Patient.BirthDate,
+                    a.Patient.BloodType,
+                    a.Patient.HeightCm,
+                    a.Patient.WeightKg,
+                    a.Patient.Address,
+                    a.Patient.ProfilePicture
+                },
+
+                HasMedicalRecord = _db.MedicalRecords
+                    .Any(m => m.AppointmentId == a.AppointmentId)
             })
             .ToListAsync(ct);
 
+        // =========================
+        // MAPPING
+        // =========================
         var items = rows.Select(r => new AppointmentListItemDto
         {
             AppointmentId = r.AppointmentId,
             PatientId = r.PatientId,
             PatientName = r.PatientName,
+
+            Gender = r.Patient.Gender,
+            BirthDate = r.Patient.BirthDate,
+            Age = (r.Patient.BirthDate.HasValue && r.Patient.BirthDate.Value.Year > 1900)
+                ? DateTime.UtcNow.Year - r.Patient.BirthDate.Value.Year
+                : null,
+
+            BloodType = r.Patient.BloodType,
+            HeightCm = r.Patient.HeightCm,
+            WeightKg = r.Patient.WeightKg,
+            Address = r.Patient.Address,
+            ProfilePicture = r.Patient.ProfilePicture,
+
             AppointmentDateTime = r.AppointmentDateTime,
             Type = r.ReasonForVisit ?? string.Empty,
 

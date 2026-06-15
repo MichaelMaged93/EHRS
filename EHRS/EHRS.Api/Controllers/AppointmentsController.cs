@@ -1,7 +1,6 @@
 ﻿using EHRS.Api.Helpers;
 using EHRS.Core.Abstractions.Queries;
 using EHRS.Core.Common;
-using EHRS.Core.Dtos.Appointments;
 using EHRS.Core.Requests.Appointments;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

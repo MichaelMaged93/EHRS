@@ -1,15 +1,30 @@
-﻿using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using EHRS.Core.Interfaces;
+﻿using EHRS.Core.Interfaces;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace EHRS.Infrastructure.Persistence
+namespace EHRS.Infrastructure.Persistence;
+
+public class EncryptedStringConverter : ValueConverter<string, string>
 {
-    public class EncryptedStringConverter : ValueConverter<string, string>
+    public EncryptedStringConverter(IEncryptionService encryption)
+        : base(
+            v => EncryptSafe(encryption, v),
+            v => DecryptSafe(encryption, v))
     {
-        public EncryptedStringConverter(IEncryptionService encryption)
-            : base(
-                v => encryption.Encrypt(v ?? string.Empty),
-                v => encryption.Decrypt(v ?? string.Empty))
-        {
-        }
+    }
+
+    private static string EncryptSafe(IEncryptionService encryption, string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return string.Empty;
+
+        return encryption.Encrypt(value);
+    }
+
+    private static string DecryptSafe(IEncryptionService encryption, string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return string.Empty;
+
+        return encryption.Decrypt(value);
     }
 }

@@ -41,9 +41,7 @@ public sealed class PatientDashboardQueries : IPatientDashboardQueries
                 DoctorId = a.DoctorId,
                 DoctorName = a.Doctor.FullName,
 
-                //  Unified display status: waiting | completed | cancelled
                 Status = MapStatusToText(a.Status, a.IsCancelled),
-
                 ReasonForVisit = a.ReasonForVisit
             })
             .FirstOrDefaultAsync(ct);
@@ -80,7 +78,11 @@ public sealed class PatientDashboardQueries : IPatientDashboardQueries
                 Timestamp = latestSensor?.Timestamp,
                 Temperature = latestSensor?.Temperature,
                 HeartRate = latestSensor?.HeartRate,
-                PressureHeart = latestSensor?.PressureHeart,
+
+                // ✅ UPDATED BLOOD PRESSURE (NEW STRUCTURE)
+                SystolicPressure = latestSensor?.SystolicPressure,
+                DiastolicPressure = latestSensor?.DiastolicPressure,
+
                 SpO2 = latestSensor?.SpO2,
                 ActivityLevel = latestSensor?.ActivityLevel
             },

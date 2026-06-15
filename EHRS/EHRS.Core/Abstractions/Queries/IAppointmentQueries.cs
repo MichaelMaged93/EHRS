@@ -1,5 +1,4 @@
 ﻿using EHRS.Core.Common;
-using EHRS.Core.Dtos.Appointments;
 using EHRS.Core.Requests.Appointments;
 
 namespace EHRS.Core.Abstractions.Queries;

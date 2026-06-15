@@ -23,7 +23,11 @@ public sealed class PatientVitalSignsDto
 
     public decimal? Temperature { get; set; }
     public short? HeartRate { get; set; }
-    public decimal? PressureHeart { get; set; }
+
+    // ✅ Blood Pressure (NEW STRUCTURE)
+    public short? SystolicPressure { get; set; }
+    public short? DiastolicPressure { get; set; }
+
     public decimal? SpO2 { get; set; }
     public string? ActivityLevel { get; set; }
 }
@@ -46,5 +50,5 @@ public sealed class PatientRecentVisitDto
     public DateTime RecordDateTime { get; set; }
 
     public string? Diagnosis { get; set; }
-    public string? Notes { get; set; } 
+    public string? Notes { get; set; }
 }

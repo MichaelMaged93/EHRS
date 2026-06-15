@@ -2,9 +2,6 @@
 using EHRS.Core.DTOs.DoctorPatients;
 using EHRS.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace EHRS.Infrastructure.Queries
 {
@@ -21,9 +18,9 @@ namespace EHRS.Infrastructure.Queries
         {
             var query = _db.SurgeryHistories
                 .AsNoTracking()
+                .Include(s => s.Patient)
                 .Where(s => s.DoctorId == doctorId);
 
-            // 🔍 Search by patient name
             if (!string.IsNullOrWhiteSpace(search))
             {
                 query = query.Where(s => s.Patient.FullName.Contains(search));
@@ -34,19 +31,41 @@ namespace EHRS.Infrastructure.Queries
                 .Select(s => new DoctorAllSurgeriesDto
                 {
                     SurgeryId = s.SurgeryId,
+
                     PatientId = s.PatientId,
                     PatientName = s.Patient.FullName,
+                    PatientImageUrl = s.Patient.ProfilePicture,
 
-                    // ✅ Patient Image
-                    PatientImageUrl = string.IsNullOrEmpty(s.Patient.ProfilePicture)
+                    Gender = s.Patient.Gender,
+                    BirthDate = s.Patient.BirthDate,
+
+                    // ✅ FIXED: safe client-side calculation
+                    Age = s.Patient.BirthDate == null
                         ? null
-                        : "/uploads/patients/" + s.Patient.ProfilePicture,
+                        : CalculateAge(s.Patient.BirthDate.Value),
+
+                    BloodType = s.Patient.BloodType,
+                    HeightCm = s.Patient.HeightCm,
+                    WeightKg = s.Patient.WeightKg,
+                    Address = s.Patient.Address,
 
                     SurgeryType = s.SurgeryType,
                     SurgeryDate = s.SurgeryDate.ToDateTime(TimeOnly.MinValue),
                     Notes = s.Notes
                 })
                 .ToListAsync();
+        }
+
+        // 🧠 Age Helper (safe & clean)
+        private static int CalculateAge(DateOnly birthDate)
+        {
+            var today = DateTime.Today;
+            var age = today.Year - birthDate.Year;
+
+            if (birthDate.ToDateTime(TimeOnly.MinValue).Date > today.AddYears(-age))
+                age--;
+
+            return age;
         }
     }
 }

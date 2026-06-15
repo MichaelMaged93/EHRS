@@ -19,7 +19,8 @@ public sealed class PatientBookingQueries : IPatientBookingQueries
     public async Task<IReadOnlyList<string>> GetAreasAsync(CancellationToken ct)
     {
         return await _context.Doctors
-            .Where(d => d.Area != null && d.Area != "")
+            .AsNoTracking()
+            .Where(d => !string.IsNullOrWhiteSpace(d.Area))
             .Select(d => d.Area!)
             .Distinct()
             .OrderBy(x => x)
@@ -31,7 +32,10 @@ public sealed class PatientBookingQueries : IPatientBookingQueries
         area = area?.Trim() ?? "";
 
         return await _context.Doctors
-            .Where(d => d.Area == area && d.Specialization != null && d.Specialization != "")
+            .AsNoTracking()
+            .Where(d =>
+                d.Area == area &&
+                !string.IsNullOrWhiteSpace(d.Specialization))
             .Select(d => d.Specialization!)
             .Distinct()
             .OrderBy(x => x)
@@ -46,7 +50,10 @@ public sealed class PatientBookingQueries : IPatientBookingQueries
         area = area?.Trim() ?? "";
         specialty = specialty?.Trim() ?? "";
 
+        var today = DateTime.Today;
+
         return await _context.Doctors
+            .AsNoTracking()
             .Where(d => d.Area == area && d.Specialization == specialty)
             .OrderBy(d => d.FullName)
             .Select(d => new PatientBookingDoctorDto
@@ -55,9 +62,16 @@ public sealed class PatientBookingQueries : IPatientBookingQueries
                 FullName = d.FullName,
                 Specialization = d.Specialization,
                 Area = d.Area,
+                ProfilePicture = d.ProfilePicture,
+                ContactNumber = d.ContactNumber,
+                Salary = d.Salary,
 
-                // NEW
-                ProfilePicture = d.ProfilePicture
+                About = d.About,
+
+                Age = d.BirthDate.HasValue
+                    ? today.Year - d.BirthDate.Value.Year -
+                      (today.DayOfYear < d.BirthDate.Value.DayOfYear ? 1 : 0)
+                    : null
             })
             .ToListAsync(ct);
     }

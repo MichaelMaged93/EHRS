@@ -10,6 +10,13 @@ public sealed class PatientBookingDoctorDto
 
     public string? Area { get; set; }
 
-    // NEW
     public string? ProfilePicture { get; set; }
+
+    public string? ContactNumber { get; set; }
+
+    public decimal? Salary { get; set; }
+
+    public int? Age { get; set; }
+
+    public string? About { get; set; }
 }
