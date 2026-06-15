@@ -65,8 +65,8 @@ public sealed class PatientBookingQueries : IPatientBookingQueries
                 ProfilePicture = d.ProfilePicture,
                 ContactNumber = d.ContactNumber,
                 Salary = d.Salary,
-
                 About = d.About,
+                AffiliatedHospital = d.AffiliatedHospital,
 
                 Age = d.BirthDate.HasValue
                     ? today.Year - d.BirthDate.Value.Year -

@@ -19,4 +19,6 @@ public sealed class PatientBookingDoctorDto
     public int? Age { get; set; }
 
     public string? About { get; set; }
+
+    public string? AffiliatedHospital { get; set; }
 }
