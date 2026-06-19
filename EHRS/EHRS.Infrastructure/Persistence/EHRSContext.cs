@@ -34,10 +34,6 @@ public partial class EHRSContext : DbContext
     public virtual DbSet<SurgeryHistory> SurgeryHistories { get; set; }
     public virtual DbSet<UserCredential> UserCredentials { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer(
-            "Server=.;Database=EHR_Wearable_DB;Trusted_Connection=True;TrustServerCertificate=True;");
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // ===================== ENCRYPTION =====================
@@ -47,13 +43,6 @@ public partial class EHRSContext : DbContext
                 v => _encryptionService.Encrypt(v ?? string.Empty),
                 v => _encryptionService.Decrypt(v ?? string.Empty)
             );
-
-            modelBuilder.Entity<Doctor>(entity =>
-            {
-                // اختياري
-                // entity.Property(e => e.Email).HasConversion(converter);
-                // entity.Property(e => e.ContactNumber).HasConversion(converter);
-            });
 
             modelBuilder.Entity<MedicalRecord>(entity =>
             {
@@ -66,7 +55,6 @@ public partial class EHRSContext : DbContext
             modelBuilder.Entity<Patient>(entity =>
             {
                 entity.Property(e => e.Address).HasConversion(converter);
-                // entity.Property(e => e.Ssn).HasConversion(converter);
             });
         }
 
@@ -74,7 +62,6 @@ public partial class EHRSContext : DbContext
         modelBuilder.Entity<Appointment>(entity =>
         {
             entity.HasKey(e => e.AppointmentId);
-
             entity.ToTable("Appointment");
 
             entity.HasIndex(e => new { e.DoctorId, e.AppointmentDateTime })
@@ -130,7 +117,7 @@ public partial class EHRSContext : DbContext
             entity.Property(e => e.Address).HasMaxLength(200);
         });
 
-        // ===================== SENSOR DATA (FIXED) =====================
+        // ===================== SENSOR DATA =====================
         modelBuilder.Entity<SensorDatum>(entity =>
         {
             entity.HasKey(e => e.SensorDataId);
@@ -141,9 +128,8 @@ public partial class EHRSContext : DbContext
             entity.Property(e => e.SpO2).HasColumnType("decimal(5,2)");
             entity.Property(e => e.Temperature).HasColumnType("decimal(5,2)");
 
-            // ✅ FIXED: removed old PressureHeart completely
-            entity.Property(e => e.SystolicPressure).HasColumnName("SystolicPressure");
-            entity.Property(e => e.DiastolicPressure).HasColumnName("DiastolicPressure");
+            entity.Property(e => e.SystolicPressure);
+            entity.Property(e => e.DiastolicPressure);
 
             entity.HasOne(d => d.Patient)
                 .WithMany(p => p.SensorData)

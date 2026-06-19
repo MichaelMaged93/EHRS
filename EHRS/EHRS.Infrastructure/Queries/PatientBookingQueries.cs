@@ -93,9 +93,27 @@ public sealed class PatientBookingQueries : IPatientBookingQueries
         if (!patientExists)
             throw new InvalidOperationException("Patient not found.");
 
+        var today = DateTime.Today;
+
         var doctor = await _context.Doctors
             .Where(d => d.DoctorId == request.DoctorId)
-            .Select(d => new { d.DoctorId, d.Area, d.Specialization })
+            .Select(d => new
+            {
+                d.DoctorId,
+                d.FullName,
+                d.Specialization,
+                d.Area,
+                d.ProfilePicture,
+                d.ContactNumber,
+                d.Salary,
+                d.About,
+                d.AffiliatedHospital,
+
+                Age = d.BirthDate.HasValue
+                    ? today.Year - d.BirthDate.Value.Year -
+                      (today.DayOfYear < d.BirthDate.Value.DayOfYear ? 1 : 0)
+                    : (int?)null
+            })
             .FirstOrDefaultAsync(ct);
 
         if (doctor is null)
@@ -135,6 +153,17 @@ public sealed class PatientBookingQueries : IPatientBookingQueries
             AppointmentId = entity.AppointmentId,
             PatientId = entity.PatientId,
             DoctorId = entity.DoctorId,
+
+            FullName = doctor.FullName,
+            Specialization = doctor.Specialization,
+            Area = doctor.Area,
+            ProfilePicture = doctor.ProfilePicture,
+            ContactNumber = doctor.ContactNumber,
+            Salary = doctor.Salary,
+            Age = doctor.Age,
+            About = doctor.About,
+            AffiliatedHospital = doctor.AffiliatedHospital,
+
             AppointmentDate = DateOnly.FromDateTime(entity.AppointmentDateTime),
             Status = entity.Status,
             ReasonForVisit = entity.ReasonForVisit,
